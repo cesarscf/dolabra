@@ -1,0 +1,111 @@
+# Grupos Fiscais
+
+## Diagrama de arquitetura
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║                 TAX GROUPS — FLUXO DE SNAPSHOT                       ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  CONFIGURAÇÃO (feita uma vez pelo admin da org):
+
+    ┌──────────────────────────────────────────────────────────────┐
+    │                      TAX GROUP                               │
+    │                                                              │
+    │  name: "Vestuário — nacional"                                │
+    │  ncm: 61091000                                               │
+    │  cfop_same_state: 5102                                       │
+    │  cfop_other_state: 6102                                      │
+    │  icms_cst / icms_rate                                        │
+    │  pis_cst  / pis_rate                                         │
+    │  cofins_cst / cofins_rate                                    │
+    │  ipi_cst  / ipi_rate (nullable)                              │
+    └──────────────────────────────┬───────────────────────────────┘
+                                   │ atribuído a
+                                   ▼
+    ┌──────────────────────────────────────────────────────────────┐
+    │                       PRODUCT                                │
+    │  tax_group_id ──────────────────────────────────────────►    │
+    │  (todos os SKUs deste produto compartilham o mesmo group)    │
+    └──────────────────────────────┬───────────────────────────────┘
+                                   │ na emissão da invoice
+                                   ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                        INVOICE ITEM                              │
+  │                                                                  │
+  │  RESOLUÇÃO DE CFOP:                                              │
+  │  org.state == customer.state?                                    │
+  │    sim ──► copia cfop_same_state                                 │
+  │    não ──► copia cfop_other_state                                │
+  │                                                                  │
+  │  SNAPSHOT (congelado, imutável):                                 │
+  │  ncm    cest    cfop (resolvido)    origin                       │
+  │  icms_cst  icms_rate                                             │
+  │  pis_cst   pis_rate                                              │
+  │  cofins_cst cofins_rate                                          │
+  │  ipi_cst   ipi_rate                                              │
+  └──────────────────────────────────────────────────────────────────┘
+                                   │
+                                   │ após o snapshot:
+                                   ▼
+    Editar o TAX GROUP NÃO afeta esta invoice.
+    Registros fiscais históricos ficam permanentemente protegidos.
+
+  CST vs CSOSN (determinado por org.tax_regime):
+
+    simples_nacional  ──► icms_cst armazena CSOSN (3 dígitos)
+    presumed_profit   ──► icms_cst armazena CST   (2 dígitos)
+    real_profit       ──► icms_cst armazena CST   (2 dígitos)
+```
+
+Um tax group é um conjunto reutilizável de regras fiscais brasileiras atribuído a um produto. Centraliza a configuração fiscal para que muitos produtos possam compartilhar as mesmas regras e as alterações se propaguem automaticamente — até que uma venda seja faturada, momento em que as regras são snapshotadas e congeladas.
+
+## Conceito
+
+O administrador da org cria tax groups nomeados (ex.: "Vestuário — nacional", "Eletrônicos importados — SP"). Cada produto é associado a um tax group. No momento do faturamento, os valores atuais do tax group são copiados para cada `invoice_item`. Depois desse ponto, editar o tax group não tem efeito sobre invoices históricas.
+
+Tax groups são atribuídos no nível de **product**, não no nível de SKU — todos os SKUs de um produto compartilham as mesmas regras fiscais.
+
+## Tax group
+
+| Campo | Tipo | Observações |
+|---|---|---|
+| `id` | uuid | |
+| `organization_id` | uuid | Chave de tenancy |
+| `name` | string | Rótulo definido pelo usuário. ex.: "Vestuário — nacional" |
+| `ncm` | string | Código NCM de 8 dígitos |
+| `cest` | string | Nullable. Obrigatório em cenários de ICMS-ST |
+| `origin` | enum | `0` domestic \| `1` foreign_direct \| `2` foreign_domestic \| `3` domestic_high_import \| `4` domestic_above_40 \| `5` domestic_below_40 \| `6` foreign_no_similar \| `7` foreign_customs_area — Tabela A de origem fiscal BR |
+| `cfop_same_state` | string | CFOP para vendas dentro do estado |
+| `cfop_other_state` | string | CFOP para vendas interestaduais |
+| `taxable_unit` | string | Unidade fiscal (pode diferir da unidade de venda do produto) |
+| `icms_cst` | string | Código CST ou CSOSN dependendo de `tax_regime` |
+| `icms_rate` | decimal | Nullable. ex.: `12.00` para 12% |
+| `icms_st_rate` | decimal | Nullable. Alíquota de ICMS-ST |
+| `icms_bc_reduction` | decimal | Nullable. Percentual de redução de base |
+| `pis_cst` | string | |
+| `pis_rate` | decimal | Nullable |
+| `cofins_cst` | string | |
+| `cofins_rate` | decimal | Nullable |
+| `ipi_cst` | string | Nullable |
+| `ipi_rate` | decimal | Nullable |
+| `created_at` | timestamp | |
+| `updated_at` | timestamp | |
+
+## Notas sobre a seleção de CFOP
+
+O CFOP correto depende de o comprador estar ou não no mesmo estado do vendedor. No momento do faturamento, o sistema compara o estado da org (`organization.state`) com o estado do customer (`contact_address.state`) para escolher entre `cfop_same_state` e `cfop_other_state` do tax group.
+
+## Notas sobre ICMS CST vs CSOSN
+
+- Empresas no **Simples Nacional** (`tax_regime = simples_nacional`) usam códigos **CSOSN** (3 dígitos).
+- Empresas no **Lucro Presumido** ou **Lucro Real** usam códigos **CST** (2 dígitos).
+- O campo `icms_cst` guarda o que for aplicável. A camada de renderização da invoice usa `organization.tax_regime` para rotulá-lo corretamente na NF-e (pós-MVP).
+
+## Snapshot no faturamento
+
+Quando uma invoice é emitida, os seguintes campos são copiados do tax group resolvido para cada `invoice_item` e tornam-se imutáveis:
+
+`ncm`, `cest`, `cfop`, `origin`, `icms_cst`, `icms_rate`, `pis_cst`, `pis_rate`, `cofins_cst`, `cofins_rate`, `ipi_cst`, `ipi_rate`
+
+O `cfop` copiado é o resolvido (mesmo estado ou outro estado), não os dois.
