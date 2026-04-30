@@ -9,6 +9,7 @@ Cada pasta `NN-feature/` contém:
 
 ```
 docs/
+├── 00-globais/         # Convenções transversais (arredondamento, delete, validações, idempotência)
 ├── 01-foundation/      # Auth, organizations, numeração de documentos, endereços
 ├── 02-products/        # Produtos, SKUs, atributos, categorias, kits, tabelas de preço
 ├── 03-inventory/       # Saldos, movimentos, contagens, custo médio
@@ -20,6 +21,8 @@ docs/
 ├── 09-financial/       # CAR, Bill, pagamentos, fluxo de caixa, cálculo de comissão
 └── 10-tax-groups/      # Grupos fiscais e snapshot
 ```
+
+A pasta `00-globais/` documenta convenções que afetam vários módulos (arredondamento monetário, política de delete, validação de documentos brasileiros, idempotência transacional). As regras de negócio específicas de cada feature continuam vivendo no módulo dono.
 
 ## Convenções dos `.feature`
 
@@ -36,6 +39,6 @@ As decisões que travam schema/comportamento (originalmente centralizadas em um 
 | Bloco | Tipo | Donas |
 |---|---|---|
 | **A** | Estruturais (travam schema) | A1 → Contacts; A2, A3 → Products; A4 → Invoices; A5, A8 → Financial; A6 → Purchase Orders; A7 → Foundation |
-| **B** | Comportamentais | B1, B2, B4, B14 → Financial; B3, B8, B10, B11 → Sales Orders; B5, B12, B13 → Sellers; B6, B18 → Foundation; B7, B15 → Tax Groups; B9, B16 → Invoices; B17 → Purchase Orders |
-| **D** | Achados durante propagação | D1, D7, D9 → Inventory; D2, D3 → Products; D4 → Financial; D5 → Purchase Orders; D6 → Foundation; D8 → Invoices |
-| **C** | Gaps menores | C1, C5 → Products; C2 → Inventory; C3 → Sales Orders; C4 → Contacts |
+| **B** | Comportamentais | B1, B2, B4, B14, B20, B22, B23 → Financial; B3, B8, B10, B11, B19 → Sales Orders; B5, B12, B13 → Sellers; B6, B18 → Foundation; B7, B15 → Tax Groups; B9, B16 → Invoices; B17 → Purchase Orders |
+| **D** | Achados durante propagação | D1, D7, D9, D10 → Inventory; D2, D3 → Products; D4 → Financial; D5 → Purchase Orders; D6 → Foundation; D8 → Invoices |
+| **C** | Gaps menores | C1, C5 → Products; C2 → Inventory; C3 → Sales Orders; C4, C8 → Contacts; C7 → Foundation; C9 → Tax Groups |

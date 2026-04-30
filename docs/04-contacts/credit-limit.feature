@@ -6,6 +6,11 @@ Funcionalidade: Credit limit do customer
   "awaiting_approval" — mesmo em organizations que desabilitam a etapa de
   aprovação por default. Um admin precisa liberar manualmente.
 
+  No MVP, "saldo em aberto" considera APENAS CARs em status pending/partial.
+  Pedidos approved/picking ainda não faturados NÃO entram na conta. A regra
+  prioriza simplicidade — quando aparecer demanda real (cliente comprando em
+  pedidos paralelos sem faturar), entra como extensão (ver C8 no README).
+
   Contexto:
     Dado a organization "Padaria do Cesar LTDA" com a etapa de aprovação desabilitada por default
     E o customer "Restaurante Sabor" com credit_limit R$ 1.000,00
@@ -45,3 +50,12 @@ Funcionalidade: Credit limit do customer
     Quando um admin aprova o pedido manualmente
     Então o pedido passa para "approved"
     E segue o fluxo normal a partir dali
+
+  Cenário: Pedidos approved/picking não entram no saldo em aberto (MVP)
+    Dado o customer "Restaurante Sabor" com credit_limit R$ 1.000,00
+    E nenhum CAR em aberto
+    E o cliente tem 2 sales_orders em "approved" totalizando R$ 800,00 (ainda não faturados)
+    Quando Cesar cria um novo pedido de R$ 500,00 para o customer
+    Então o pedido vai para "approved" sem disparar awaiting_approval
+    # MVP só considera CARs (pending/partial). approved/picking não entram.
+    # Quando os pedidos approved virarem invoices issued, os CARs gerados passam a contar.

@@ -37,6 +37,14 @@ Funcionalidade: Fluxo de status do pedido de venda
     Quando um admin aprova
     Então o pedido passa para "approved"
 
+  Cenário: Admin rejeita pedido em awaiting_approval volta para draft
+    Dado um pedido em "awaiting_approval"
+    Quando um admin rejeita o pedido com motivo "Crédito não autorizado pelo financeiro"
+    Então o pedido volta para "draft"
+    E o motivo da rejeição é registrado em internal_notes
+    E o criador do pedido pode editar e re-submeter
+    # rejeição é uma transição reversa explícita — diferente de cancelar
+
   Cenário: Aprovado avança para picking
     Dado um pedido em "approved"
     Quando o time operacional marca como "picking"
@@ -73,3 +81,19 @@ Funcionalidade: Fluxo de status do pedido de venda
     Dado um pedido em "cancelled"
     Quando Cesar tenta editar qualquer campo ou emitir invoice
     Então a operação é rejeitada
+
+  Esquema do Cenário: Transições inválidas são rejeitadas
+    Dado um pedido em status "<origem>"
+    Quando Cesar tenta forçar a transição para "<destino>"
+    Então a operação é rejeitada com a mensagem "Transição inválida"
+
+    Exemplos:
+      | origem             | destino            |
+      | draft              | invoiced           |
+      | approved           | draft              |
+      | approved           | awaiting_approval  |
+      | invoiced           | approved           |
+      | invoiced           | cancelled          |
+      | cancelled          | draft              |
+      | cancelled          | approved           |
+      | picking            | draft              |

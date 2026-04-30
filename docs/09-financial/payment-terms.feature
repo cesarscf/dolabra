@@ -50,3 +50,25 @@ Funcionalidade: Templates de condição de pagamento (payment_term)
 
     Quando Cesar seleciona "30/60" num purchase_order
     Então os Bills da confirmação serão gerados a partir de "30/60"
+
+  Cenário: Editar payment_term em uso afeta apenas documentos futuros
+    Dado o payment_term "30/60" usado em 5 sales_orders e 3 purchase_orders
+    E uma invoice já emitida (com CARs gerados a partir dele)
+    Quando Cesar edita o "30/60" para virar "30/60/90" (3 parcelas)
+    Então a edição é aceita
+    E os 5 sales_orders ainda em "draft" passam a usar a nova configuração ao gerar CARs
+    Mas os CARs já gerados pela invoice anterior NÃO mudam (foram gerados na emissão)
+    E os Bills já gerados pelos purchase_orders NÃO mudam
+    # geração de CAR/Bill é snapshot do template no momento da emissão/confirmação
+
+  Cenário: Deletar payment_term em uso é bloqueado
+    Dado o payment_term "30/60" referenciado por 5 sales_orders ou 3 contacts
+    Quando Cesar tenta deletar o payment_term
+    Então a operação é rejeitada com a mensagem "Payment term em uso por 5 sales_order(s) e 3 contact(s) — reatribua antes de deletar"
+    # convenção em docs/00-globais/README.md
+
+  Cenário: Deletar payment_term sem uso é permitido
+    Dado o payment_term "Antigo — 90 dias" sem nenhum contact, sales_order ou purchase_order apontando
+    Quando Cesar deleta o payment_term
+    Então o template é removido
+    # CARs/Bills históricos continuam intactos (foram gerados como snapshot no momento da emissão/confirmação)

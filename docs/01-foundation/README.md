@@ -189,6 +189,20 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
+### C7. Validação de DV em CNPJ/CPF é obrigatória
+
+**Onde**: a regra dizia "11 ou 14 dígitos" mas não checava dígito verificador. Aceitar `12345678000100` como CNPJ válido era convite a fraude/erro de digitação.
+
+**Decisão**: **validar DV de CNPJ e CPF** sempre, tanto em organization quanto em contact.
+
+- Cálculo padrão (módulo 11) — implementação compartilhada em camada de validação.
+- A UI normaliza para "só dígitos" antes da validação.
+- DV inválido retorna mensagem específica (`CNPJ inválido` / `CPF inválido`), distinta de `comprimento incorreto`.
+- Validação contra base oficial (Receita Federal) fica para pós-MVP.
+
+**Status**: `decided` — convenção completa em [docs/00-globais/README.md](../00-globais/README.md).
+
 ### Referências cruzadas
 
 - **A1** — Address: tabela compartilhada vs. por entidade (afeta a tabela `address` deste módulo). Decisão completa em [Contacts → A1](../04-contacts/README.md#a1-address-tabela-compartilhada-vs-por-entidade).
+- **Convenções globais** — arredondamento monetário, política de delete, validação de documentos brasileiros e idempotência transacional vivem em [docs/00-globais/README.md](../00-globais/README.md).

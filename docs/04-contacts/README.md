@@ -138,7 +138,22 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
+### C8. Saldo em aberto do credit_limit considera apenas CARs (MVP)
+
+**Onde**: a regra B3 definia "saldo em aberto" como `SUM(car.amount - paid)` em status `pending/partial`. Faltava decidir se pedidos `approved/picking` ainda não faturados também consomem crédito.
+
+**Decisão**: **MVP considera apenas CARs**. Pedidos `approved/picking` não entram na conta.
+
+- Simples e previsível: o crédito conta dinheiro que já virou direito de receber (CAR), não pedido em curso.
+- Risco: cliente faz N pedidos `approved` paralelos sem faturar e estoura o limite na soma. Aceitável no MVP — operação manual identifica.
+- Quando o pedido é faturado, o CAR aparece e a verificação no próximo pedido passa a refletir.
+- Extensão futura: incluir `approved/picking` via setting `organization.credit_limit_includes_unbilled_orders` (default `false` para preservar comportamento atual).
+
+**Status**: `decided`
+
 ### Referências cruzadas
 
 - **A5** — `payment_terms` como string livre vs. estrutura (afeta `contact.default_payment_term_id`). Decisão completa em [Financial → A5](../09-financial/README.md#a5-payment_terms-como-string-livre-vs-estrutura).
 - **B3** — Credit limit: bloqueia, alerta ou exige aprovação? (define o significado de `contact.credit_limit`). Decisão completa em [Sales Orders → B3](../06-sales-orders/README.md#b3-credit-limit-do-contact-bloqueia-alerta-ou-exige-aprovação).
+- **C7** — Validação de DV em CNPJ/CPF (mesma regra usada em organization). Decisão completa em [Foundation → C7](../01-foundation/README.md#c7-validação-de-dv-em-cnpjcpf-é-obrigatória).
+- **Convenções globais** — política de delete, validação de documentos brasileiros: [docs/00-globais/README.md](../00-globais/README.md).

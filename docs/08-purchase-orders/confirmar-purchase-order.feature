@@ -20,7 +20,7 @@ Funcionalidade: Confirmar um pedido de compra
       | 2 de 3      | 2026-06-22 | R$ 826,82      |
       | 3 de 3      | 2026-07-22 | R$ 826,36      |
     E a soma dos Bills fecha exatamente em R$ 2.480,00
-    # última parcela absorve o arredondamento
+    # última parcela absorve o arredondamento — regra em docs/00-globais/arredondamento-monetario.feature
 
   Cenário: Pedido confirmed fica read-only
     Dado um pedido em "confirmed"
@@ -36,3 +36,15 @@ Funcionalidade: Confirmar um pedido de compra
     Dado um pedido recém-confirmado
     Quando um usuário consulta as contas a pagar
     Então os Bills gerados aparecem com status "pending" e origin "purchase_order"
+
+  Cenário: Re-confirmar PO já confirmed é rejeitado
+    Dado um pedido em "confirmed"
+    Quando Cesar tenta confirmar novamente
+    Então a operação é rejeitada com a mensagem "Pedido já está confirmed"
+    E nenhum Bill duplicado é gerado
+    # idempotência: ver docs/00-globais/README.md → seção "Idempotência"
+
+  Cenário: Confirmar PO em status diferente de draft é rejeitado
+    Dado um pedido em "partially_received"
+    Quando Cesar tenta confirmar
+    Então a operação é rejeitada com a mensagem "Apenas pedidos em draft podem ser confirmados"

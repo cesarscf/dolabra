@@ -109,7 +109,7 @@ Geradas automaticamente quando uma sales invoice é emitida. Nunca criadas manua
 
 ### Pagamentos do CAR
 
-Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos. O CAR fica `paid` quando `paid_amount >= amount`; pagamentos adicionais (juros/multa) somam ao `paid_amount` e o excedente vai para `extra_amount`.
+Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos. O CAR fica `paid` quando a soma dos `car_payment.amount` em status `effective` é ≥ `amount`; pagamentos adicionais (juros/multa) somam ao `paid_amount` e o excedente vai para `extra_amount`.
 
 **`car_payment`**
 
@@ -120,11 +120,16 @@ Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos. O CAR 
 | `amount` | decimal | Valor recebido neste pagamento |
 | `payment_method` | enum | `cash \| pix \| boleto \| credit_card \| debit_card \| bank_transfer \| other` |
 | `paid_at` | date | |
-| `notes` | text | Nullable |
+| `status` | enum | `effective \| cancelled`. Default `effective`. Pagamento errado é estornado via cancelamento (ver [B20](#b20-estorno-de-pagamento-via-cancelamento)) |
+| `cancelled_at` | timestamp | Nullable |
+| `notes` | text | Nullable. Recebe o motivo quando cancelado |
 
-Transições de status:
-- Primeiro pagamento com `paid_amount < amount` → `partial`
+`paid_amount` do CAR é `SUM(car_payment.amount) WHERE status = 'effective'` — recalculado em cada insert/update/cancel.
+
+Transições de status do CAR:
+- Primeiro pagamento `effective` com `paid_amount < amount` → `partial`
 - Pagamento que leva a `paid_amount >= amount` → `paid` (excedente vai para `extra_amount`)
+- Cancelamento de pagamento que reduz `paid_amount`: regride para `partial` ou `pending` conforme o novo total
 - Invoice cancelada → `cancelled`
 
 "Overdue" não é uma transição — é uma condição derivada em queries/UI: `status IN (pending, partial) AND due_date < current_date`. Não há job agendado no MVP.
@@ -169,9 +174,11 @@ Bills são criados de duas formas:
 | `amount` | decimal | |
 | `payment_method` | enum | `cash \| pix \| boleto \| credit_card \| debit_card \| bank_transfer \| other` |
 | `paid_at` | date | |
-| `notes` | text | Nullable |
+| `status` | enum | `effective \| cancelled`. Default `effective`. Mesma semântica do `car_payment` (ver [B20](#b20-estorno-de-pagamento-via-cancelamento)) |
+| `cancelled_at` | timestamp | Nullable |
+| `notes` | text | Nullable. Recebe o motivo quando cancelado |
 
-Mesmas regras de transição de status do CAR.
+Mesmas regras de transição de status do CAR. Bills com `amount` negativo (ajustes manuais — ver [B22](#b22-bill-manual-aceita-amount-negativo)) seguem o mesmo fluxo: ficam `paid` quando o total de pagamentos `effective` cobre `|amount|`.
 
 ## Payment terms (condições de pagamento)
 
@@ -334,6 +341,47 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
+### B20. Estorno de pagamento via cancelamento
+
+**Onde**: pagamentos lançados por engano (duplicados, valor errado, em cliente errado) precisam de uma forma de "desfazer" sem perder rastreabilidade. Editar ou deletar `car_payment`/`bill_payment` quebraria histórico.
+
+**Decisão**: **`car_payment` e `bill_payment` ganham `status enum (effective | cancelled)`**. Estorno é sempre via cancelamento — pagamentos não são editáveis nem deletáveis.
+
+- `paid_amount` do CAR/Bill é derivado: `SUM(amount) WHERE status = 'effective'`.
+- Cancelamento gatilha recálculo de status do CAR/Bill — pode regredir de `paid` → `partial` ou `pending`.
+- Cancelado **não conta no fluxo de caixa realizado**.
+- Motivo do cancelamento entra em `notes` (ou um campo dedicado se virar requisito).
+- **Reversão automática de comissão NÃO acontece** quando um pagamento que disparou comissão é cancelado — o admin precisa criar Bill manual de ajuste negativo (ver [B22](#b22-bill-manual-aceita-amount-negativo)). Justificativa: comissão tem implicações legais/contratuais que extrapolam o estorno técnico.
+
+**Status**: `decided`
+
+### B22. Bill manual aceita amount negativo
+
+**Onde**: ajustes operacionais (estorno de comissão, devolução de pagamento ao cliente registrada como entrada) precisavam de um veículo. Sem amount negativo, a única alternativa era criar um CAR — semântica errada (CAR = direito a receber do cliente).
+
+**Decisão**: **Bills com `origin = manual` aceitam `amount < 0`**. Bills com `origin = purchase_order` ou `origin = commission` continuam exigindo `amount > 0`.
+
+- Bill negativo aparece em contas a pagar como linha com saída negativa (= entrada efetiva).
+- No fluxo de caixa realizado, o pagamento de Bill negativo soma como entrada.
+- `description` continua obrigatório para `manual` — o motivo do ajuste fica explícito.
+- Sem auditoria automática "este Bill negativo cancela aquele Bill positivo" — a ligação é via `description` e `notes` (livre). Quando virar requisito, vira coluna `adjustment_of_id`.
+
+**Status**: `decided`
+
+### B23. Cálculo de comissão é síncrono e idempotente
+
+**Onde**: o trigger "CAR → paid gera Bill de comissão" não definia se era na mesma transação do `car_payment` ou em job separado. Sem definição, retries podiam duplicar Bills.
+
+**Decisão**: **síncrono na transação do `car_payment`**, com unicidade garantida por constraint.
+
+- Ao registrar `car_payment` que leva o CAR a `paid`, a mesma transação cria o Bill de comissão (se aplicável).
+- Constraint: `UNIQUE (car_id) WHERE origin = 'commission'` em `bill`. Garante 1 Bill por CAR pago — re-tentativas falham.
+- Falha em qualquer passo (cálculo, persistência) faz rollback do `car_payment` inteiro — usuário re-tenta na UI.
+- Comissão zero não gera Bill (não cria registro de R$ 0,00).
+- Sem outbox/job assíncrono no MVP. Quando entrar (ex.: para enviar e-mail ao seller), o disparo continua síncrono e o e-mail vira efeito assíncrono separado.
+
+**Status**: `decided`
+
 ### B14. Bill de comissão vence imediato no MVP
 
 **Onde**: o texto antigo dizia "vencimento conforme configuração da org (default: imediato)" mas o setting não existia.
@@ -371,3 +419,4 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 - **B5** — Seller sem user → `bill.supplier_id` nullable + `bill.seller_id` para Bills de comissão. Decisão completa em [Sellers → B5](../05-sellers/README.md#b5-seller-sem-user-representante-externo).
 - **D5** — `due_date` dos Bills gerados na confirmação da PO segue o `payment_term` do PO. Decisão completa em [Purchase Orders → D5](../08-purchase-orders/README.md#d5-due_date-do-bill-gerado-na-confirmação-da-po).
+- **Convenções globais** — arredondamento monetário (geração de CARs/Bills/comissão), idempotência transacional e política de delete: [docs/00-globais/README.md](../00-globais/README.md).

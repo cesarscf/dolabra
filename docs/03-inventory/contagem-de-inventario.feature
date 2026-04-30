@@ -59,3 +59,22 @@ Funcionalidade: Contagem de inventário
     Quando Cesar tenta editar qualquer quantidade contada
     Então a operação é rejeitada
     E correções exigem uma nova contagem ou ajuste manual
+
+  Cenário: Movimento durante a contagem afeta o saldo, não o snapshot do count
+    Dado uma contagem em "in_progress" com PAO-UN com system_quantity = 50 (snapshot do início)
+    E o usuário ainda não informou counted_quantity para PAO-UN
+    Quando um purchase_receipt registra +10 unidades de PAO-UN durante a contagem
+    Então o saldo atual de PAO-UN passa a 60
+    Mas o system_quantity do inventory_count_item para PAO-UN continua em 50
+    Quando o usuário informa counted_quantity = 48 e fecha a contagem
+    Então a difference do count é -2 (relativa ao snapshot, não ao saldo atual)
+    E é gerado um adjustment_out de 2 unidades para PAO-UN
+    E o saldo final de PAO-UN é 58 (60 - 2)
+    # ajustes do count são DELTAS (counted - system_snapshot), não absolutos.
+    # Isso preserva movimentos concorrentes sem sobrescrevê-los.
+
+  Cenário: Conferência simultânea de SKU contado é prevenida no fechamento
+    Dado uma contagem em "in_progress" com counted_quantity informado para todos os itens
+    E um operador tenta registrar um ajuste manual no mesmo SKU enquanto a contagem está aberta
+    Então o ajuste manual é aceito normalmente
+    # contagem não bloqueia outros movimentos — usa snapshot+delta (ver cenário acima)

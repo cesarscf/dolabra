@@ -44,3 +44,23 @@ Funcionalidade: Cadastrar seller (interno ou externo)
     Quando Cesar desativa o seller
     Então "Rafael" não aparece em formulários de novo pedido
     Mas pedidos e comissões antigas associados a "Rafael" continuam acessíveis no histórico
+
+  Cenário: User do Better Auth removido da organization preserva o seller
+    Dado o seller "Ana" vinculado ao user "Ana" da Better Auth
+    E "Ana" tem 10 sales_orders e 3 Bills de comissão
+    Quando o user "Ana" é removido como membro da organization (via Better Auth)
+    Então o seller "Ana" continua existindo
+    E os sales_orders e Bills de comissão continuam ligados ao seller (auditoria preservada)
+    Mas "Ana" não consegue mais logar para emitir pedidos
+    # seller.user_id continua apontando para o user removido — não é cascata
+
+  Cenário: Deletar seller sem documentos é permitido
+    Dado o seller "Externo Teste" sem nenhum sales_order, Bill de comissão ou contact (default_seller) apontando
+    Quando Cesar deleta o seller
+    Então o seller é removido
+
+  Cenário: Deletar seller em uso é bloqueado
+    Dado o seller "Ana" referenciado por 10 sales_orders e 3 Bills
+    Quando Cesar tenta deletar o seller
+    Então a operação é rejeitada com a mensagem "Seller em uso por 10 sales_order(s) e 3 Bill(s) — desative em vez de deletar"
+    # para "aposentar" sem deletar, marcar is_active = false

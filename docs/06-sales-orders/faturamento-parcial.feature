@@ -69,9 +69,16 @@ Funcionalidade: Faturamento parcial de um pedido
     E o pedido continua em "approved" (ou onde estava)
     E nenhuma quantidade fica marcada como faturada
 
-  Cenário: Defesa em profundidade — segundo draft a emitir falha se outro passou na frente
-    Dado o draft A e o draft B, ambos com 60 PAO-UN (120 comprometidos somando, mas a checagem do draft permite porque cada um isolado cabe)
-    # nota: a checagem do draft considera todos os drafts vivos. este cenário cobre o caso raro em que dois drafts são criados sob mesma transação e a checagem é burlada
-    Quando o draft A é emitido (vira issued)
-    E Cesar tenta emitir o draft B
+  Cenário: Defesa em profundidade — emissão revalida soma de qty mesmo após criação dos drafts
+    # contexto: a checagem na criação do draft pode ficar desatualizada se dois operadores
+    # emitirem drafts simultâneos. A revalidação na emissão é a última linha de defesa.
+    Dado o pedido com 100 PAO-UN
+    E o draft A com 60 PAO-UN
+    E o draft B com 50 PAO-UN
+    # ambos foram criados em janelas distintas e a soma (110) já estaria bloqueada na criação;
+    # se os drafts foram criados antes de uma redução de qty do sales_order_item, ainda assim
+    # o sistema precisa proteger a emissão.
+    Quando o draft A é emitido (vira issued, faturando 60)
+    E Cesar tenta emitir o draft B (que faturaria mais 50)
     Então a emissão do draft B é rejeitada com a mensagem "Quantidade faturada excede o pedido"
+    # a revalidação acontece dentro da transação de emissão, antes do snapshot fiscal e da geração de CARs

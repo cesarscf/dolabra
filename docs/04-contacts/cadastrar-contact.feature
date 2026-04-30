@@ -45,13 +45,23 @@ Funcionalidade: Cadastrar contacts (customers e suppliers)
     Quando Cesar tenta cadastrar um contact individual sem CPF
     Então o cadastro é rejeitado com a mensagem "CPF é obrigatório para pessoa física"
 
-  Cenário: tax_id de contact PJ é armazenado apenas com dígitos
-    Quando Cesar cadastra um contact company com CNPJ "98.765.432/0001-10"
-    Então o contact é criado com tax_id "98765432000110"
+  Esquema do Cenário: tax_id armazenado apenas com dígitos (sem máscara)
+    Quando Cesar cadastra um contact <person_type> com <documento> "<entrada>"
+    Então o contact é criado com tax_id "<armazenado>"
 
-  Cenário: tax_id de contact PF é armazenado apenas com dígitos
-    Quando Cesar cadastra um contact individual com CPF "111.222.333-44"
-    Então o contact é criado com tax_id "11122233344"
+    Exemplos:
+      | person_type | documento | entrada            | armazenado     |
+      | company     | CNPJ      | 98.765.432/0001-10 | 98765432000110 |
+      | individual  | CPF       | 111.222.333-44     | 11122233344    |
+
+  Cenário: CNPJ de contact com DV inválido é rejeitado
+    Quando Cesar tenta cadastrar um contact company com CNPJ "98.765.432/0001-11"
+    Então o cadastro é rejeitado com a mensagem "CNPJ inválido"
+    # validação de DV — ver convenção em docs/00-globais/README.md
+
+  Cenário: CPF de contact com DV inválido é rejeitado
+    Quando Cesar tenta cadastrar um contact individual com CPF "111.222.333-45"
+    Então o cadastro é rejeitado com a mensagem "CPF inválido"
 
   Cenário: Buscar contact por documento ignora máscara digitada
     Dado o contact "Restaurante Sabor LTDA" com tax_id "98765432000110"
@@ -73,3 +83,16 @@ Funcionalidade: Cadastrar contacts (customers e suppliers)
     Então o seller do pedido vem pré-preenchido com "Ana"
     E a tabela de preço do pedido vem pré-preenchida com "Atacado"
     Mas Cesar pode trocar ambos manualmente no pedido
+
+  Cenário: Deletar contact sem documentos é permitido
+    Dado o contact "Cliente Teste" sem nenhum sales_order, purchase_order, CAR ou Bill associado
+    Quando Cesar deleta o contact
+    Então o contact é removido
+    # convenção de delete em docs/00-globais/README.md
+
+  Cenário: Deletar contact em uso é bloqueado
+    Dado o contact "Restaurante Sabor" com 5 sales_orders e 2 CARs em aberto
+    Quando Cesar tenta deletar o contact
+    Então a operação é rejeitada com a mensagem "Contact em uso por 5 sales_order(s) e 2 CAR(s) — inative em vez de deletar"
+    E o contact permanece intacto
+    # para "aposentar" sem deletar, mudar status para inactive ou blocked

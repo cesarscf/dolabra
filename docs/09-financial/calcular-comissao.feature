@@ -81,3 +81,29 @@ Funcionalidade: Cálculo de comissão (disparado por CAR paid)
     Então o paid_amount do CAR é R$ 520,00
     E o extra_amount do CAR é R$ 20,00
     E o Bill de comissão gerado é R$ 25,00 (calculado sobre o amount original, não sobre o pago)
+
+  Cenário: Geração de comissão é síncrona com o registro do pagamento
+    Dado um CAR de R$ 500,00 em status "pending"
+    Quando Cesar registra um car_payment de R$ 500,00 (que leva o CAR a "paid")
+    Então na mesma transação:
+      | Efeito                                         |
+      | car_payment é persistido                       |
+      | paid_amount do CAR atualizado                  |
+      | status do CAR transitado para "paid"           |
+      | Bill de comissão criado com origin=commission  |
+    E se qualquer um dos passos falhar, todos são desfeitos
+    # MVP é síncrono — sem outbox/job. Falha = transação rollback, usuário re-tenta.
+
+  Cenário: Idempotência — re-tentativa de pagamento não duplica Bill de comissão
+    Dado um CAR já em "paid" que gerou um Bill de comissão de R$ 25,00
+    Quando o sistema (por bug ou retry de operador) tenta gerar Bill de comissão para o mesmo CAR
+    Então a operação é rejeitada pela constraint de unicidade
+    E continua existindo apenas 1 Bill de comissão para esse CAR
+    # garantia: UNIQUE (car_id) em bill onde origin = commission
+
+  Cenário: Seller sem comissão cadastrada não gera Bill (zero comissão)
+    Dado um seller "Externo" com default_commission_pct 0% e sem overrides
+    E uma invoice paga totalizando R$ 1.000,00
+    Quando o CAR vira "paid"
+    Então nenhum Bill de comissão é gerado
+    # zerado é zerado — não cria Bill com amount 0,00 só para registrar

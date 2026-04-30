@@ -41,6 +41,22 @@ Funcionalidade: Configurar um tax_group
     E não informa CEST
     Então o cadastro é rejeitado com a mensagem "CEST é obrigatório quando há ICMS-ST"
 
+  Esquema do Cenário: Validação de formato dos códigos fiscais
+    Quando Cesar cadastra um tax_group com <campo> "<valor>"
+    Então o cadastro é rejeitado com a mensagem "<mensagem>"
+
+    Exemplos:
+      | campo             | valor      | mensagem                          |
+      | NCM               | 1905909    | NCM precisa ter 8 dígitos         |
+      | NCM               | 190590901  | NCM precisa ter 8 dígitos         |
+      | NCM               | 1905909A   | NCM precisa ter 8 dígitos         |
+      | CFOP mesmo estado | 510        | CFOP precisa ter 4 dígitos        |
+      | CFOP mesmo estado | 51020      | CFOP precisa ter 4 dígitos        |
+      | CFOP outro estado | 510A       | CFOP precisa ter 4 dígitos        |
+
+    # validação só de formato no MVP — sem checar contra tabela oficial.
+    # Convenção em docs/00-globais/README.md.
+
   Cenário: Tax_group não vive em category nem em product
     Quando Cesar inspeciona os campos de um produto
     Então o produto aponta apenas tax_group_id (nenhum NCM, CFOP, origem ou unidade fiscal local)

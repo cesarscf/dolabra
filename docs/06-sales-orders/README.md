@@ -65,6 +65,9 @@ Um sales order registra a intenção de vender produtos a um customer. Dispara a
 
 ```
 draft → [awaiting_approval] → approved → picking → invoiced → cancelled
+   ▲           │
+   └───────────┘
+   (rejeição volta para draft — ver B19)
 ```
 
 A etapa `awaiting_approval` é controlada pelo setting `organization.requires_sales_order_approval` (ver [Foundation → A7](../01-foundation/README.md#a7-setting-de-aprovação-por-organization)). Quando `false`, os pedidos vão direto de `draft` para `approved`.
@@ -208,6 +211,18 @@ SE contact.credit_limit IS NOT NULL AND excede:
 - Drafts descartados liberam qty imediatamente.
 - Permite o cenário comum (preparar dois drafts paralelos para fechar com clientes finais distintos) sem permitir a inconsistência.
 - A validação roda também na emissão (defesa em profundidade), com erro explícito se outro draft "passou na frente".
+
+**Status**: `decided`
+
+### B19. Rejeição em `awaiting_approval` volta para `draft`
+
+**Onde**: o fluxo previa apenas `aprovar`. Se admin negasse, não havia transição definida — pedido ficava preso ou tinha que ser cancelado (perdendo conteúdo).
+
+**Decisão**: **rejeição é uma transição reversa explícita `awaiting_approval → draft`**, com motivo persistido em `internal_notes`.
+
+- Diferente de `cancelar` — rejeitar mantém o pedido editável; o criador ajusta e re-submete.
+- Sem campo dedicado `rejection_reason` no MVP — o motivo entra em `internal_notes` (já existe). Quando aparecer demanda de relatório de rejeições, vira coluna própria.
+- Sem fluxo de aprovação multi-nível no MVP — uma rejeição basta.
 
 **Status**: `decided`
 

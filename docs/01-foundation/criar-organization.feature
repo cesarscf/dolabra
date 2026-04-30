@@ -38,15 +38,24 @@ Funcionalidade: Criar uma organization
     Quando Cesar tenta cadastrar outra empresa com o mesmo CNPJ
     Então o cadastro é rejeitado com a mensagem "CNPJ já está em uso"
 
-  Cenário: tax_id é armazenado apenas com dígitos (sem máscara)
-    Quando Cesar cadastra uma empresa com CNPJ "12.345.678/0001-90"
-    Então a organization é criada com tax_id "12345678000190"
-    E a organization tem person_type "company"
+  Esquema do Cenário: tax_id armazenado apenas com dígitos (sem máscara)
+    Quando Cesar cadastra uma organization com <documento> "<entrada>"
+    Então a organization é criada com tax_id "<armazenado>"
+    E a organization tem person_type "<tipo>"
 
-  Cenário: tax_id de MEI também é armazenado apenas com dígitos
-    Quando Cesar cadastra um MEI com CPF "123.456.789-00"
-    Então a organization é criada com tax_id "12345678900"
-    E a organization tem person_type "individual"
+    Exemplos:
+      | documento | entrada            | armazenado     | tipo       |
+      | CNPJ      | 12.345.678/0001-90 | 12345678000190 | company    |
+      | CPF       | 123.456.789-00     | 12345678900    | individual |
+
+  Cenário: CNPJ com dígito verificador inválido é rejeitado
+    Quando Cesar tenta cadastrar uma empresa com CNPJ "12.345.678/0001-91"
+    Então o cadastro é rejeitado com a mensagem "CNPJ inválido"
+    # validação de DV — ver convenção em docs/00-globais/README.md
+
+  Cenário: CPF com dígito verificador inválido é rejeitado
+    Quando Cesar tenta cadastrar um MEI com CPF "123.456.789-01"
+    Então o cadastro é rejeitado com a mensagem "CPF inválido"
 
   Cenário: Buscar organization por CNPJ ignora máscara digitada
     Dado uma organization com tax_id "12345678000190"

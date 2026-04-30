@@ -43,6 +43,7 @@ Funcionalidade: Emitir uma invoice (draft → issued)
       | 1 de 2      | 2026-05-23 | R$ 64,50 |
       | 2 de 2      | 2026-06-22 | R$ 64,50 |
     E a soma exata dos CARs fecha em R$ 129,00 (última parcela absorve arredondamento quando necessário)
+    # regra completa de arredondamento: docs/00-globais/arredondamento-monetario.feature
 
   Cenário: Snapshot fiscal por item — dentro do mesmo estado
     Dado que org.state = "SP" e customer.state = "SP"
@@ -66,8 +67,20 @@ Funcionalidade: Emitir uma invoice (draft → issued)
   Cenário: Snapshot do customer congela dados fiscais
     Dado o customer "Restaurante Sabor" com razão social, CNPJ, IE e endereço de billing
     Quando a invoice é emitida
-    Então o customer_snapshot registra CNPJ, razão social, IE e endereço completos
-    E edições subsequentes no contact não alteram esse snapshot
+    Então o customer_snapshot (jsonb) registra a estrutura:
+      | Chave              | Origem                                       |
+      | tax_id             | contact.tax_id                               |
+      | person_type        | contact.person_type                          |
+      | legal_name         | contact.legal_name (se company)              |
+      | name               | contact.name (se individual)                 |
+      | trade_name         | contact.trade_name                           |
+      | state_registration | contact.state_registration                   |
+      | email              | contact.email                                |
+      | address            | objeto: {street, number, complement,         |
+      |                    |  neighborhood, city, state, zip_code,        |
+      |                    |  country} — copiado do address de billing    |
+      |                    |  default no momento da emissão               |
+    E edições subsequentes no contact ou no address não alteram esse snapshot
 
   Cenário: Editar tax_group após emissão não afeta invoice antiga
     Dado uma invoice issued com ICMS rate de 0,00 copiado do tax_group

@@ -133,8 +133,27 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
+### C9. Validação só de formato (sem tabela oficial)
+
+**Onde**: campos fiscais (NCM, CFOP, CSOSN, CST, origem) precisavam de regra de validação. Validar contra tabela oficial da Receita Federal exigiria sincronização com base externa.
+
+**Decisão**: **MVP valida apenas formato** (comprimento + dígitos). Validação contra tabela oficial fica para pós-MVP.
+
+- NCM: 8 dígitos numéricos.
+- CFOP: 4 dígitos numéricos.
+- CSOSN: 3 dígitos (Simples Nacional).
+- CST: 2 dígitos (Lucro Presumido/Real).
+- Origem: enum 0-7 (Tabela A já restringe).
+- O operador fiscal é responsável por informar códigos válidos para a operação.
+
+**Status**: `decided` — convenção completa em [docs/00-globais/README.md](../00-globais/README.md).
+
 ### B7. DIFAL, FCP, MVA-ST
 
 **Onde**: o módulo cobre ICMS/PIS/COFINS/IPI/ICMS-ST rate, mas não DIFAL (diferencial de alíquota), FCP (fundo de combate à pobreza), MVA/IVA (base de cálculo ST).
 
 **Status**: `deferred` — pós-MVP junto com emissão de NF-e. O schema do `tax_group` deve permitir evolução sem migration destrutiva.
+
+### Referências cruzadas
+
+- **Convenções globais** — validação de formato (NCM 8d, CFOP 4d, etc.) e arredondamento monetário: [docs/00-globais/README.md](../00-globais/README.md).

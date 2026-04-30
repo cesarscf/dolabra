@@ -64,3 +64,15 @@ Funcionalidade: Cadastrar um produto físico
     Então o produto aparece na listagem de administração de produtos
     Mas o produto não aparece ao montar um pedido de venda
     E o produto não aparece em relatórios de estoque
+
+  Cenário: Deletar produto sem documentos associados é permitido
+    Dado o produto "Pão Teste" em status "draft" sem nenhum sales_order, invoice, purchase_order ou stock_movement
+    Quando Cesar deleta o produto
+    Então o produto, seus SKUs e suas associações (atributos, imagens) são removidos
+    # convenção de delete em docs/00-globais/README.md
+
+  Cenário: Deletar produto com documentos associados é bloqueado
+    Dado o produto "Pão Francês" referenciado em 3 sales_orders e 1 invoice
+    Quando Cesar tenta deletar o produto
+    Então a operação é rejeitada com a mensagem "Produto em uso por 3 sales_order(s) e 1 invoice(s) — arquive em vez de deletar"
+    # para "aposentar" produto em uso, usar status archived (irreversível)

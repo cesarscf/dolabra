@@ -36,3 +36,19 @@ Funcionalidade: Árvore de categorias
     Quando Cesar inspeciona os campos de uma categoria
     Então a categoria não tem NCM, CFOP, origem ou unidade fiscal
     E toda regra fiscal vem exclusivamente do tax_group do produto
+
+  Cenário: Deletar categoria sem produtos e sem subcategorias é permitido
+    Dado a categoria "Categoria Vazia" sem nenhum produto associado e sem categorias filhas
+    Quando Cesar deleta a categoria
+    Então a categoria é removida
+
+  Cenário: Deletar categoria com produtos é bloqueado
+    Dado a categoria "Pães" associada a 10 produtos
+    Quando Cesar tenta deletar a categoria
+    Então a operação é rejeitada com a mensagem "Categoria em uso por 10 produto(s) — reatribua antes de deletar"
+
+  Cenário: Deletar categoria com subcategorias é bloqueado
+    Dado a categoria "Padaria" com filhas "Pães" e "Bolos"
+    Quando Cesar tenta deletar "Padaria"
+    Então a operação é rejeitada com a mensagem "Categoria tem 2 subcategoria(s) — mova ou delete-as antes"
+    # ordem: deletar folhas primeiro, subir na árvore

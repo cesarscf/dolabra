@@ -171,6 +171,19 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
+### D10. Inventory count usa delta, não absoluto
+
+**Onde**: o snapshot de `system_quantity` é tirado no início da contagem para "não perseguir alvo móvel". Mas se houver movimentos concorrentes durante a contagem (recebimento, venda), o ajuste no fechamento podia sobrescrever esses movimentos se aplicasse `counted_quantity` como valor absoluto.
+
+**Decisão**: **ajustes do count são deltas (`counted - system_snapshot`), não absolutos**.
+
+- O `adjustment_in/out` gerado no fechamento usa `|difference|` como quantidade.
+- O saldo final = saldo atual ± delta. Movimentos concorrentes são preservados.
+- Não há lock no SKU enquanto o count está em `in_progress` — outros movimentos passam normalmente.
+- Se vários counts paralelos virem realidade pós-MVP (por escopo), a regra continua válida (cada count tem seu snapshot).
+
+**Status**: `decided`
+
 ### C2. `inventory_count_item` sem `organization_id`
 
 **Onde**: `inventory_count_item` herdava tenancy via `inventory_count_id`, exigindo join para qualquer query — inconsistente com a invariante de "toda tabela de domínio tem `organization_id`".

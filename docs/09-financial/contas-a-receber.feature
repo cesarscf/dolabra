@@ -83,3 +83,37 @@ Funcionalidade: Contas a receber (CAR)
     Dado um CAR pago com paid_amount R$ 520,00 (amount R$ 500,00, extra R$ 20,00)
     Quando Cesar consulta o fluxo realizado do dia do pagamento
     Então a entrada do dia é R$ 520,00 (não R$ 500,00)
+
+  Cenário: Cancelar um car_payment registrado por engano
+    Dado um CAR de R$ 500,00 com paid_amount R$ 500,00 e status "paid"
+    E o car_payment "P1" de R$ 500,00 foi registrado com método "PIX"
+    Quando Cesar cancela o car_payment "P1" com motivo "Lançamento duplicado"
+    Então o car_payment "P1" passa para status "cancelled"
+    E o paid_amount do CAR recalcula para R$ 0,00
+    E o status do CAR volta para "pending"
+    E o motivo é registrado em notes do car_payment
+    # estorno via cancelamento — car_payment não é editável nem deletável
+
+  Cenário: Cancelar pagamento que estava parcial
+    Dado um CAR com amount R$ 500,00, dois car_payments efetivos:
+      | id | amount    | status    |
+      | P1 | R$ 200,00 | effective |
+      | P2 | R$ 300,00 | effective |
+    E o status do CAR é "paid"
+    Quando Cesar cancela o car_payment "P2"
+    Então o paid_amount do CAR recalcula para R$ 200,00
+    E o status do CAR volta para "partial"
+
+  Cenário: car_payment cancelado não conta no fluxo de caixa realizado
+    Dado um car_payment "effective" de R$ 500,00 em 2026-04-10
+    Quando Cesar cancela o car_payment em 2026-04-15
+    Então o fluxo realizado do dia 2026-04-10 não inclui mais esses R$ 500,00
+    E nenhum lançamento aparece em 2026-04-15 (cancelamento não cria entrada)
+
+  Cenário: Comissão já gerada por CAR pago não é revertida automaticamente ao cancelar pagamento
+    Dado um CAR que ficou "paid" e gerou um Bill de comissão de R$ 25,00
+    Quando Cesar cancela o car_payment que levou o CAR a "paid"
+    Então o status do CAR volta para "partial" ou "pending"
+    Mas o Bill de comissão permanece como está (imutável)
+    E para reverter, admin precisa criar Bill manual de ajuste negativo
+    # reversão automática de comissão fica fora do MVP — ver Financial → B22

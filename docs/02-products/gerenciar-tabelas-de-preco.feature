@@ -45,3 +45,18 @@ Funcionalidade: Tabelas de preço
     Quando Cesar tenta adicionar "PAO-UN" a um pedido usando a tabela "Revendedor"
     Então o sistema emite erro "SKU PAO-UN não tem preço na tabela Revendedor"
     # sem fallback automático para outra tabela
+
+  Cenário: Deletar tabela de preço sem uso é permitido
+    Dado a tabela "Promo Antiga" sem nenhum sales_order, contact ou price_list_item apontando
+    Quando Cesar deleta a tabela
+    Então a tabela é removida
+
+  Cenário: Deletar tabela de preço em uso é bloqueada
+    Dado a tabela "Atacado" referenciada por 2 contacts (default_price_list) e 8 sales_orders
+    Quando Cesar tenta deletar a tabela
+    Então a operação é rejeitada com a mensagem "Tabela de preço em uso por 2 contact(s) e 8 sales_order(s) — reatribua antes de deletar"
+
+  Cenário: Não pode deletar a tabela default
+    Dado a tabela "Varejo" marcada como default
+    Quando Cesar tenta deletar a tabela
+    Então a operação é rejeitada com a mensagem "Tabela default — promova outra tabela a default antes de deletar"

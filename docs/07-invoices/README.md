@@ -91,7 +91,7 @@ Uma invoice representa o registro formal de uma venda. É sempre gerada a partir
 | `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). **Atribuído lazy** apenas na transição `draft → issued` (ver [B9](#b9-numeração-da-invoice-é-lazy)). Nullable em `draft`. Não é o número da NF-e (que vai em `nf_number`) |
 | `sales_order_id` | uuid | FK → `sales_order` |
 | `status` | enum | `draft \| issued \| cancelled` |
-| `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão: `tax_id`, `legal_name`, `state_registration`, endereço |
+| `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão. Estrutura: `{tax_id, person_type, legal_name, name, trade_name, state_registration, email, address: {street, number, complement, neighborhood, city, state, zip_code, country}}`. O endereço copiado é o de `billing` default. Schema completo: ver feature `emitir-invoice.feature` |
 | `subtotal` | decimal | Soma dos totais dos itens |
 | `discount_total` | decimal | |
 | `total` | decimal | |
