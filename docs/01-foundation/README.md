@@ -25,7 +25,8 @@
     │   ORGANIZATION A     │    │   ORGANIZATION B     │
     │   (Empresa Alfa)     │    │   (Empresa Beta)     │
     │                      │    │                      │
-    │  cnpj                │    │  cnpj                │
+    │  tax_id              │    │  tax_id              │
+    │  person_type         │    │  person_type         │
     │  legal_name          │    │  legal_name          │
     │  tax_regime          │    │  tax_regime          │
     │  address             │    │  address             │
@@ -61,8 +62,8 @@ O Better Auth gera a tabela `organization` base. O Dolabra a estende com campos 
 
 | Campo | Tipo | Observações |
 |---|---|---|
-| `cnpj` | string | 14 dígitos, único por org. Null se `cpf` estiver preenchido |
-| `cpf` | string | 11 dígitos. Para empreendedores individuais (MEI) |
+| `taxId` | string | CPF (11 dígitos) ou CNPJ (14 dígitos), conforme `personType`. Único entre organizations. **Armazenado apenas com dígitos** (sem máscara) — a UI cuida da formatação na exibição |
+| `personType` | enum | `company \| individual` — define se `taxId` é CNPJ (`company`) ou CPF (`individual`, MEI) |
 | `legalName` | string | Razão social |
 | `tradeName` | string | Nome fantasia |
 | `stateRegistration` | string | Inscrição Estadual (IE). Nullable |

@@ -27,7 +27,7 @@ Funcionalidade: Criar uma organization
       | Razão social      | Cesar Silva ME   |
       | Regime tributário | Simples Nacional |
     Então a organization "Cesar Silva ME" é criada
-    E o CNPJ fica vazio na organization
+    E a organization fica classificada como pessoa física (MEI)
 
   Cenário: Recusar cadastro sem CNPJ e sem CPF
     Quando Cesar tenta cadastrar uma empresa sem CNPJ e sem CPF
@@ -37,6 +37,22 @@ Funcionalidade: Criar uma organization
     Dado que já existe uma organization com CNPJ "12.345.678/0001-90"
     Quando Cesar tenta cadastrar outra empresa com o mesmo CNPJ
     Então o cadastro é rejeitado com a mensagem "CNPJ já está em uso"
+
+  Cenário: tax_id é armazenado apenas com dígitos (sem máscara)
+    Quando Cesar cadastra uma empresa com CNPJ "12.345.678/0001-90"
+    Então a organization é criada com tax_id "12345678000190"
+    E a organization tem person_type "company"
+
+  Cenário: tax_id de MEI também é armazenado apenas com dígitos
+    Quando Cesar cadastra um MEI com CPF "123.456.789-00"
+    Então a organization é criada com tax_id "12345678900"
+    E a organization tem person_type "individual"
+
+  Cenário: Buscar organization por CNPJ ignora máscara digitada
+    Dado uma organization com tax_id "12345678000190"
+    Quando alguém busca por "12.345.678/0001-90"
+    Então a organization é encontrada
+    # a comparação é feita sobre o valor armazenado (só dígitos), independente da formatação digitada
 
   Esquema do Cenário: Regimes tributários aceitos
     Quando Cesar cadastra uma empresa com o regime tributário "<regime>"

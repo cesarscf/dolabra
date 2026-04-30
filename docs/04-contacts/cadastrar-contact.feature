@@ -45,6 +45,20 @@ Funcionalidade: Cadastrar contacts (customers e suppliers)
     Quando Cesar tenta cadastrar um contact individual sem CPF
     Então o cadastro é rejeitado com a mensagem "CPF é obrigatório para pessoa física"
 
+  Cenário: tax_id de contact PJ é armazenado apenas com dígitos
+    Quando Cesar cadastra um contact company com CNPJ "98.765.432/0001-10"
+    Então o contact é criado com tax_id "98765432000110"
+
+  Cenário: tax_id de contact PF é armazenado apenas com dígitos
+    Quando Cesar cadastra um contact individual com CPF "111.222.333-44"
+    Então o contact é criado com tax_id "11122233344"
+
+  Cenário: Buscar contact por documento ignora máscara digitada
+    Dado o contact "Restaurante Sabor LTDA" com tax_id "98765432000110"
+    Quando Cesar busca contacts por "98.765.432/0001-10"
+    Então o contact é encontrado
+    # comparação ignora pontuação porque o armazenado é só dígitos
+
   Cenário: Usar trade_name como apelido
     Dado o contact company "Restaurante Sabor LTDA" com nome fantasia "Sabor"
     Quando Cesar busca o contact por "Sabor"

@@ -13,7 +13,7 @@
     │  type: customer | supplier | both                           │
     │  person_type: individual | company                          │
     │                                                             │
-    │  cnpj / cpf                                                 │
+    │  tax_id                                                     │
     │  legal_name / name / trade_name                             │
     │  state_registration (IE) / municipal_registration (IM)      │
     │                                                             │
@@ -54,7 +54,7 @@
                                             supplier_id
 
   SNAPSHOT FISCAL NA INVOICE:
-    No momento da emissão, cnpj/cpf + legal_name +
+    No momento da emissão, tax_id + legal_name +
     state_registration + address são copiados para
     invoice.customer_snapshot (jsonb) e congelados.
 ```
@@ -69,8 +69,7 @@ Um cadastro unificado para customers e suppliers. Um único registro de contact 
 | `organization_id` | uuid | Chave de tenancy |
 | `type` | enum | `customer \| supplier \| both` |
 | `person_type` | enum | `individual \| company` |
-| `cnpj` | string | 14 dígitos. Obrigatório quando `person_type = company` |
-| `cpf` | string | 11 dígitos. Obrigatório quando `person_type = individual` |
+| `tax_id` | string | CPF (11 dígitos) ou CNPJ (14 dígitos), conforme `person_type`. Obrigatório. Único por org. **Armazenado apenas com dígitos** (sem máscara) — a UI cuida da formatação na exibição |
 | `legal_name` | string | Razão social. Usado quando `person_type = company` |
 | `name` | string | Nome completo. Usado quando `person_type = individual` |
 | `trade_name` | string | Nome fantasia. Nullable |
@@ -112,7 +111,7 @@ Um contact pode ter vários endereços. Cada endereço tem um type indicando sua
 
 ## Notas sobre dados fiscais
 
-Quando uma sales invoice (NF-e) é emitida, os dados fiscais do customer no momento do faturamento são snapshotados na invoice — `cnpj`/`cpf`, `legal_name`, `state_registration` e endereço. Alterações no contact após a emissão não afetam documentos históricos.
+Quando uma sales invoice (NF-e) é emitida, os dados fiscais do customer no momento do faturamento são snapshotados na invoice — `tax_id`, `legal_name`, `state_registration` e endereço. Alterações no contact após a emissão não afetam documentos históricos.
 
 ## Decisões arquiteturais
 

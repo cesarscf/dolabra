@@ -91,7 +91,7 @@ Uma invoice representa o registro formal de uma venda. É sempre gerada a partir
 | `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). Não é o número da NF-e (que vai em `nf_number`) |
 | `sales_order_id` | uuid | FK → `sales_order` |
 | `status` | enum | `draft \| issued \| cancelled` |
-| `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão: cnpj/cpf, legal_name, state_registration, endereço |
+| `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão: `tax_id`, `legal_name`, `state_registration`, endereço |
 | `subtotal` | decimal | Soma dos totais dos itens |
 | `discount_total` | decimal | |
 | `total` | decimal | |
