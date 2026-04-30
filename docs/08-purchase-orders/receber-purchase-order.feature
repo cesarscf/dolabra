@@ -7,7 +7,7 @@ Funcionalidade: Recebimento de pedido de compra
   atingem a quantidade pedida, o pedido vira "received".
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido de compra "PO-000001" em status "confirmed" com:
       | SKU          | Qty pedida | Unit cost |
       | FARINHA-25KG | 20         | R$ 90,00  |

@@ -7,7 +7,7 @@ Funcionalidade: Status do contact
   empresa: não desaparece quando o cliente é bloqueado.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o customer "Restaurante Sabor" com status "active"
 
   Cenário: Contact active aparece em formulários

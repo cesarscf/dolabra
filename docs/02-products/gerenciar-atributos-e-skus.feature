@@ -2,16 +2,16 @@
 
 Funcionalidade: Atributos globais e SKUs variantes
   Atributos (Cor, Tamanho, Voltagem, …) são definidos uma vez por
-  organization e reutilizados entre vários produtos. Cada combinação
+  loja e reutilizados entre vários produtos. Cada combinação
   vendável de valores de atributo vira um SKU. Um produto sem atributos
   tem exatamente um SKU.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Cadastrar um atributo e seus valores
     Quando Cesar cria o atributo "Tamanho" com valores "P", "M" e "G"
-    Então a organization tem o atributo "Tamanho" com 3 valores possíveis
+    Então a loja tem o atributo "Tamanho" com 3 valores possíveis
 
   Cenário: Atributos são reutilizáveis entre produtos
     Dado o atributo "Tamanho" com valores "P", "M", "G"
@@ -32,10 +32,10 @@ Funcionalidade: Atributos globais e SKUs variantes
     E cada SKU carrega exatamente um valor de "Cor" e um valor de "Tamanho"
     E não existem dois SKUs com a mesma combinação
 
-  Cenário: SKU tem código único por organization
+  Cenário: SKU tem código único por loja
     Quando Cesar cadastra 3 produtos físicos simples
     Então cada SKU tem um "sku_code" distinto
-    E Cesar pode editar manualmente o "sku_code" de um SKU desde que não colida com outro da mesma organization
+    E Cesar pode editar manualmente o "sku_code" de um SKU desde que não colida com outro da mesma loja
 
   Cenário: Campos opcionais do SKU
     Dado o produto "Pão Francês"

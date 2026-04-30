@@ -6,7 +6,7 @@ Funcionalidade: Cadastrar um kit
   (o identificador de venda) e precisa ter pelo menos 1 componente.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o tax_group "Alimento — padaria" configurado
     E os produtos físicos já cadastrados e ativos:
       | Produto    | SKU       | Estoque atual |

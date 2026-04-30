@@ -60,7 +60,7 @@ As regras de comissão ficam aqui, mas o cálculo e a geração do bill pertence
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `user_id` | uuid | FK → `user` do Better Auth. **Nullable** — null para representantes externos sem login. Um seller por user por org |
 | `name` | string | Nome de exibição (pode diferir do nome de auth do user) |
 | `email` | string | Nullable. Usado quando `user_id IS NULL`; ignorado caso contrário (fonte de verdade = user do auth) |

@@ -7,7 +7,7 @@ Funcionalidade: Precificar um kit conforme o kit_price_mode
   no momento da venda.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E a tabela de preço default "Varejo"
     E os SKUs físicos com preços na tabela "Varejo":
       | SKU       | Preço (R$) |

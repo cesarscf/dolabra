@@ -3,13 +3,13 @@
 Funcionalidade: Fluxo de status do pedido de venda
   Um pedido passa por: draft → [awaiting_approval] → approved → picking →
   invoiced. A etapa "awaiting_approval" é controlada pelo setting
-  "requires_sales_order_approval" da organization — mas a verificação de
+  "requires_sales_order_approval" da loja — mas a verificação de
   credit_limit pode forçá-la mesmo quando o setting está desligado. O fluxo
   termina em "invoiced" no MVP — registro de entrega ("delivered") fica
   fora do escopo.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o customer "Restaurante Sabor" sem credit_limit definido
 
   Cenário: Pedido em draft é totalmente editável
@@ -18,14 +18,14 @@ Funcionalidade: Fluxo de status do pedido de venda
     Então todas as edições são aceitas
     E nenhum movimento de estoque ou financeiro é gerado
 
-  Cenário: Organization com requires_sales_order_approval=false: draft → approved
-    Dado a organization com requires_sales_order_approval "false"
+  Cenário: Loja com requires_sales_order_approval=false: draft → approved
+    Dado a loja com requires_sales_order_approval "false"
     E um pedido em "draft"
     Quando Cesar confirma o pedido
     Então o pedido vai direto para "approved"
 
-  Cenário: Organization com requires_sales_order_approval=true: draft → awaiting_approval
-    Dado a organization com requires_sales_order_approval "true"
+  Cenário: Loja com requires_sales_order_approval=true: draft → awaiting_approval
+    Dado a loja com requires_sales_order_approval "true"
     E um pedido em "draft"
     Quando Cesar confirma o pedido
     Então o pedido vai para "awaiting_approval"

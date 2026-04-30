@@ -6,7 +6,7 @@ Funcionalidade: Galeria de imagens do produto
   no Cloudflare R2 e expostas via URL pública.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o produto "Croissant" com SKUs por sabor (Doce, Salgado)
 
   Cenário: Upload de múltiplas imagens na galeria

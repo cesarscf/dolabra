@@ -7,7 +7,7 @@ Funcionalidade: Criar um pedido de compra
   no momento do recebimento.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o supplier "Moinho Central"
     E os SKUs "FARINHA-25KG" e "ACUCAR-5KG"
     E o payment_term "À vista" (1 parcela, 0 dias, 100%)

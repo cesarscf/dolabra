@@ -7,7 +7,7 @@ Funcionalidade: Contas a receber (CAR)
   separados; o CAR caminha pending → partial → paid.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o customer "Restaurante Sabor"
 
   Cenário: Invoice emitida gera CARs por parcela

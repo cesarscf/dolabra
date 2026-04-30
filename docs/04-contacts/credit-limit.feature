@@ -3,7 +3,7 @@
 Funcionalidade: Credit limit do customer
   Cada customer pode ter um limite de crédito opcional. Quando o saldo em
   aberto mais o novo pedido ultrapassa o limite, o pedido é forçado para
-  "awaiting_approval" — mesmo em organizations que desabilitam a etapa de
+  "awaiting_approval" — mesmo em lojas que desabilitam a etapa de
   aprovação por default. Um admin precisa liberar manualmente.
 
   No MVP, "saldo em aberto" considera APENAS CARs em status pending/partial.
@@ -12,7 +12,7 @@ Funcionalidade: Credit limit do customer
   pedidos paralelos sem faturar), entra como extensão (ver C8 no README).
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA" com a etapa de aprovação desabilitada por default
+    Dado a loja "Padaria do Cesar LTDA" com a etapa de aprovação desabilitada por default
     E o customer "Restaurante Sabor" com credit_limit R$ 1.000,00
 
   Cenário: Saldo em aberto considera CARs pendentes e parciais

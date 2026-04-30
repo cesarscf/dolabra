@@ -8,7 +8,7 @@ Funcionalidade: Contas a pagar (Bills)
     de consumo) que não exigem PO.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Bill originário de purchase order aponta para supplier
     Dado um PO confirmado para o supplier "Moinho Central" de R$ 2.480,00 (3 parcelas)

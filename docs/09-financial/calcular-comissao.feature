@@ -6,7 +6,7 @@ Funcionalidade: Cálculo de comissão (disparado por CAR paid)
   aquele CAR representa. Bills de comissão são imutáveis uma vez gerados.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o seller "Ana" com default_commission_pct 5% e commission_base "gross"
     E a categoria "Bolos" com override de comissão 8% para Ana
     E uma invoice emitida no valor total de R$ 1.000,00 ligada a um sales_order do seller "Ana"

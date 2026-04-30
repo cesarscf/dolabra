@@ -107,7 +107,7 @@ O product-pai guarda os dados compartilhados. Toda unidade vendável é um SKU (
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `name` | string | |
 | `slug` | string | Único por org. Obrigatório — usado para integrações futuras de e-commerce/marketplace |
 | `description` | text | Nullable |
@@ -149,7 +149,7 @@ Nenhuma constraint de DB impõe essas regras — a UI e a camada de serviço sã
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `product_id` | uuid | FK → `product` |
 | `sku_code` | string | Único por org. Gerado automaticamente, editável pelo usuário |
 | `ean_gtin` | string | Nullable. Dígito verificador validado |
@@ -175,14 +175,14 @@ Liga um SKU à sua combinação de valores de atributo (ex.: Color=Blue, Size=M)
 
 ## Atributos globais
 
-Atributos são definidos uma vez por organization e reutilizados entre produtos. Isso viabiliza filtros cruzados (ex.: "todos os SKUs azuis").
+Atributos são definidos uma vez por loja e reutilizados entre produtos. Isso viabiliza filtros cruzados (ex.: "todos os SKUs azuis").
 
 **`attribute`**
 
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `name` | string | ex.: "Color", "Size", "Voltage" |
 
 **`attribute_value`**
@@ -200,7 +200,7 @@ Atributos são definidos uma vez por organization e reutilizados entre produtos.
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `parent_id` | uuid | FK → `category`. Null = raiz |
 | `name` | string | |
 
@@ -248,7 +248,7 @@ Produtos são precificados via tabelas de preço (ex.: Varejo, Atacado, Revended
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `name` | string | ex.: "Retail", "Wholesale" |
 | `is_default` | boolean | Uma default por org |
 

@@ -1,10 +1,10 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
+  index,
   pgTable,
   text,
   timestamp,
-  boolean,
-  index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -36,7 +36,7 @@ export const sessions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    activeOrganizationId: text("active_organization_id"),
+    activeStoreId: text("active_store_id"),
   },
   (table) => [index("sessions_userId_idx").on(table.userId)],
 );
@@ -81,8 +81,8 @@ export const verifications = pgTable(
   (table) => [index("verifications_identifier_idx").on(table.identifier)],
 );
 
-export const organizations = pgTable(
-  "organizations",
+export const stores = pgTable(
+  "stores",
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
@@ -91,16 +91,16 @@ export const organizations = pgTable(
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
   },
-  (table) => [uniqueIndex("organizations_slug_uidx").on(table.slug)],
+  (table) => [uniqueIndex("stores_slug_uidx").on(table.slug)],
 );
 
 export const members = pgTable(
   "members",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id")
+    storeId: text("store_id")
       .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
+      .references(() => stores.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -108,7 +108,7 @@ export const members = pgTable(
     createdAt: timestamp("created_at").notNull(),
   },
   (table) => [
-    index("members_organizationId_idx").on(table.organizationId),
+    index("members_storeId_idx").on(table.storeId),
     index("members_userId_idx").on(table.userId),
   ],
 );
@@ -117,9 +117,9 @@ export const invitations = pgTable(
   "invitations",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id")
+    storeId: text("store_id")
       .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
+      .references(() => stores.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
     role: text("role"),
     status: text("status").default("pending").notNull(),
@@ -130,7 +130,7 @@ export const invitations = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
   },
   (table) => [
-    index("invitations_organizationId_idx").on(table.organizationId),
+    index("invitations_storeId_idx").on(table.storeId),
     index("invitations_email_idx").on(table.email),
   ],
 );
@@ -156,15 +156,15 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }),
 }));
 
-export const organizationsRelations = relations(organizations, ({ many }) => ({
+export const storesRelations = relations(stores, ({ many }) => ({
   members: many(members),
   invitations: many(invitations),
 }));
 
 export const membersRelations = relations(members, ({ one }) => ({
-  organizations: one(organizations, {
-    fields: [members.organizationId],
-    references: [organizations.id],
+  stores: one(stores, {
+    fields: [members.storeId],
+    references: [stores.id],
   }),
   users: one(users, {
     fields: [members.userId],
@@ -173,9 +173,9 @@ export const membersRelations = relations(members, ({ one }) => ({
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
-  organizations: one(organizations, {
-    fields: [invitations.organizationId],
-    references: [organizations.id],
+  stores: one(stores, {
+    fields: [invitations.storeId],
+    references: [stores.id],
   }),
   users: one(users, {
     fields: [invitations.inviterId],

@@ -6,7 +6,7 @@ Funcionalidade: Cálculo do custo médio ponderado móvel
   NÃO alteram o custo médio — apenas consomem o valor vigente.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o SKU "PAO-UN" do produto "Pão Francês"
 
   Cenário: Primeira entrada estabelece o custo

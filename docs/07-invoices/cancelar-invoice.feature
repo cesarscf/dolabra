@@ -7,7 +7,7 @@ Funcionalidade: Cancelar uma invoice
   comissão deles também (dinheiro entrou, comissão é devida).
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E uma invoice "INV-000010" em status "issued" com:
       | SKU     | Qty faturada | Custo no movimento "out" |
       | PAO-UN  | 100          | R$ 0,30                  |

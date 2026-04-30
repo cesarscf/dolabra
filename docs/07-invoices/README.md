@@ -87,7 +87,7 @@ Uma invoice representa o registro formal de uma venda. É sempre gerada a partir
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). **Atribuído lazy** apenas na transição `draft → issued` (ver [B9](#b9-numeração-da-invoice-é-lazy)). Nullable em `draft`. Não é o número da NF-e (que vai em `nf_number`) |
 | `sales_order_id` | uuid | FK → `sales_order` |
 | `status` | enum | `draft \| issued \| cancelled` |

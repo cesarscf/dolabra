@@ -84,7 +84,7 @@ Quando o supplier não vai entregar o saldo restante (faltou produto, contrato c
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `number` | string | Número legível do pedido (ex.: `PO-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md) |
 | `status` | enum | Ver fluxo de status acima |
 | `supplier_id` | uuid | FK → `contact` (type precisa incluir `supplier`) |
@@ -161,7 +161,7 @@ Recebimento parcial é suportado. Cada receipt registra o que realmente chegou.
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `purchase_order_id` | uuid | FK → `purchase_order` |
 | `received_at` | timestamp | |
 | `notes` | text | Nullable |

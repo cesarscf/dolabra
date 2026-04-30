@@ -3,11 +3,11 @@
 Funcionalidade: Resolução de CFOP no momento da emissão
   Cada tax_group tem dois CFOPs: um para operações dentro do estado do
   vendedor e outro para operações interestaduais. Na emissão da invoice,
-  o sistema compara o estado da organization com o estado do customer e
+  o sistema compara o estado da loja com o estado do customer e
   copia o CFOP correto para o snapshot do item.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA" no estado "SP"
+    Dado a loja "Padaria do Cesar LTDA" no estado "SP"
     E o tax_group "Alimento — padaria" com:
       | CFOP mesmo estado | 5102 |
       | CFOP outro estado | 6102 |

@@ -7,7 +7,7 @@ Funcionalidade: Regras de comissão do seller
   define se o desconto do pedido entra ou não.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o seller "Ana" com comissão default de 5% e base "net"
 
   Cenário: Override por categoria tem precedência sobre o default

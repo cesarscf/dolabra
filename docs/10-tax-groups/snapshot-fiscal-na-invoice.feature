@@ -7,7 +7,7 @@ Funcionalidade: Snapshot fiscal imutável na invoice
   para auditoria e escrituração.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o tax_group "Alimento — padaria" com ICMS CSOSN 102, PIS rate 0,65 e COFINS rate 3,00
     E um pedido pronto para faturamento
 

@@ -6,7 +6,7 @@ Funcionalidade: Cadastrar contacts (customers e suppliers)
   quando um fornecedor também é cliente.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Cadastrar customer pessoa jurídica
     Quando Cesar cadastra o contact:

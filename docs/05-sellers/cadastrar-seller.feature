@@ -6,7 +6,7 @@ Funcionalidade: Cadastrar seller (interno ou externo)
   pedidos e recebem comissão; a diferença está apenas na autenticação.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Cadastrar seller interno ligado a um user do Better Auth
     Dado um user autenticado "Ana" no Better Auth
@@ -34,10 +34,10 @@ Funcionalidade: Cadastrar seller (interno ou externo)
     Quando Cesar tenta cadastrar um seller sem user, sem e-mail e sem telefone
     Então o cadastro é rejeitado com a mensagem "Informe um user, e-mail ou telefone"
 
-  Cenário: Um único seller por user por organization
+  Cenário: Um único seller por user por loja
     Dado que "Ana" já é seller da "Padaria do Cesar LTDA"
-    Quando Cesar tenta cadastrar outro seller vinculado ao mesmo user "Ana" na mesma organization
-    Então o cadastro é rejeitado com a mensagem "Este user já é seller nesta organization"
+    Quando Cesar tenta cadastrar outro seller vinculado ao mesmo user "Ana" na mesma loja
+    Então o cadastro é rejeitado com a mensagem "Este user já é seller nesta loja"
 
   Cenário: Seller inativo é oculto de novos pedidos
     Dado o seller "Rafael" em uso
@@ -45,10 +45,10 @@ Funcionalidade: Cadastrar seller (interno ou externo)
     Então "Rafael" não aparece em formulários de novo pedido
     Mas pedidos e comissões antigas associados a "Rafael" continuam acessíveis no histórico
 
-  Cenário: User do Better Auth removido da organization preserva o seller
+  Cenário: User do Better Auth removido da loja preserva o seller
     Dado o seller "Ana" vinculado ao user "Ana" da Better Auth
     E "Ana" tem 10 sales_orders e 3 Bills de comissão
-    Quando o user "Ana" é removido como membro da organization (via Better Auth)
+    Quando o user "Ana" é removido como membro da loja (via Better Auth)
     Então o seller "Ana" continua existindo
     E os sales_orders e Bills de comissão continuam ligados ao seller (auditoria preservada)
     Mas "Ana" não consegue mais logar para emitir pedidos

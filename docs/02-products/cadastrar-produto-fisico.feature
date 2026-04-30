@@ -6,7 +6,7 @@ Funcionalidade: Cadastrar um produto físico
   e um tax_group que define como ele é tributado.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o tax_group "Alimento — padaria" configurado
     E a tabela de preço default "Varejo"
 
@@ -22,7 +22,7 @@ Funcionalidade: Cadastrar um produto físico
     E o slug do produto é "pao-frances"
 
   Cenário: Cadastrar produto com variações (SKUs múltiplos)
-    Dado os atributos da organization:
+    Dado os atributos da loja:
       | Atributo | Valores       |
       | Tamanho  | P, M, G       |
       | Sabor    | Doce, Salgado |
@@ -37,19 +37,19 @@ Funcionalidade: Cadastrar um produto físico
     Então o produto "Croissant" tem 6 SKUs
     E cada SKU corresponde a uma combinação única dos atributos
 
-  Cenário: Slug é único por organization
+  Cenário: Slug é único por loja
     Dado que já existe o produto "Pão Francês" com slug "pao-frances"
     Quando Cesar tenta cadastrar outro produto com o mesmo slug "pao-frances"
     Então o cadastro é rejeitado com a mensagem "Slug já está em uso"
 
-  Cenário: Slug pode se repetir em organizations diferentes
-    Dado a organization "Padaria do Cesar LTDA" com produto de slug "pao-frances"
-    E a organization "Pão Artesanal LTDA"
+  Cenário: Slug pode se repetir em lojas diferentes
+    Dado a loja "Padaria do Cesar LTDA" com produto de slug "pao-frances"
+    E a loja "Pão Artesanal LTDA"
     Quando a "Pão Artesanal LTDA" cadastra um produto com slug "pao-frances"
     Então o cadastro é aceito
-    E cada organization mantém seu próprio "pao-frances"
+    E cada loja mantém seu próprio "pao-frances"
 
-  Cenário: Nome do produto pode se repetir dentro da mesma organization
+  Cenário: Nome do produto pode se repetir dentro da mesma loja
     Dado que já existe o produto "Pão Francês" com slug "pao-frances"
     Quando Cesar cadastra outro produto "Pão Francês" com slug "pao-frances-tradicional"
     Então o cadastro é aceito

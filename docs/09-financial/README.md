@@ -92,7 +92,7 @@ Geradas automaticamente quando uma sales invoice é emitida. Nunca criadas manua
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `invoice_id` | uuid | FK → `invoice` |
 | `customer_id` | uuid | FK → `contact` |
 | `installment_number` | integer | ex.: 1, 2, 3 em pagamentos parcelados |
@@ -145,7 +145,7 @@ Bills são criados de duas formas:
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `purchase_order_id` | uuid | FK → `purchase_order`. Null para bills manuais e de comissão |
 | `supplier_id` | uuid | FK → `contact`. Nullable. Usado para `origin = purchase_order \| manual`. Null em bills de comissão |
 | `seller_id` | uuid | FK → `seller`. Nullable. Usado apenas em bills com `origin = commission`; null caso contrário |
@@ -189,7 +189,7 @@ Templates de parcelamento reutilizáveis. Evitam texto livre e permitem geraçã
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `name` | string | ex.: "À vista", "30/60/90", "Entrada + 2x" |
 | `is_default` | boolean | Um default por org |
 
@@ -237,7 +237,7 @@ Lista plana de categorias por org. Usada para classificar bills e, opcionalmente
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `name` | string | ex.: "Aluguel", "Salários", "Receita de vendas", "Comissões" |
 | `type` | enum | `income \| expense` |
 
@@ -279,7 +279,7 @@ Derivado dos registros de CAR e Bill. Sem tabela separada — calculado em tempo
 | **Realizado** | Pagamentos de CAR (`car_payment.paid_at`) e pagamentos de Bill (`bill_payment.paid_at`) |
 | **Projetado** | CARs e Bills com status `pending`/`partial` agrupados por `due_date` (vencidos aparecem como subcategoria via derivação em runtime) |
 
-O fluxo de caixa é sempre escopado pela organization e pode ser filtrado por intervalo de data e financial category.
+O fluxo de caixa é sempre escopado pela loja e pode ser filtrado por intervalo de data e financial category.
 
 ## Decisões arquiteturais
 
@@ -305,7 +305,7 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Decisão**: **templates `payment_term` reutilizáveis**.
 
-- Nova tabela `payment_term` (org-scoped): `id`, `organization_id`, `name`, `is_default`.
+- Nova tabela `payment_term` (org-scoped): `id`, `store_id`, `name`, `is_default`.
 - Nova tabela filha `payment_term_installment`: `id`, `payment_term_id`, `sequence`, `days_offset`, `pct`. Soma dos `pct` por payment_term = 100.
 - Em `contact`: removido `payment_terms` (string livre); adicionado `default_payment_term_id` (FK, nullable).
 - Em `sales_order`: removido `payment_terms` (string livre); adicionado `payment_term_id` (FK, obrigatório). Pré-preenchido pelo default do contact, editável.
@@ -388,7 +388,7 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Decisão**: **hardcoded `due_date = current_date`** (vencimento imediato) por enquanto.
 
-- YAGNI — vira setting da organization na primeira solicitação real (`commission_bill_due_offset_days int`).
+- YAGNI — vira setting da loja na primeira solicitação real (`commission_bill_due_offset_days int`).
 - Sellers podem ser pagos no mesmo dia ou no fechamento mensal — depende do operacional do escritório, não do schema.
 
 **Status**: `decided`

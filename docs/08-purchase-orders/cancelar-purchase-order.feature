@@ -6,7 +6,7 @@ Funcionalidade: Cancelar um pedido de compra
   (pós-MVP), não cancelamento. Ao cancelar, os Bills gerados são cancelados.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido de compra "PO-000001"
 
   Cenário: Cancelar PO em draft

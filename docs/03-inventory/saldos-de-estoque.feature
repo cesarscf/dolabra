@@ -6,10 +6,10 @@ Funcionalidade: Saldos de estoque por SKU
   um movimento (entrada, saída ou ajuste). Isso preserva auditoria completa.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o SKU "PAO-UN" do produto "Pão Francês"
 
-  Cenário: Cada SKU tem no máximo um saldo por organization
+  Cenário: Cada SKU tem no máximo um saldo por loja
     Dado que "PAO-UN" já tem um registro de saldo
     Quando o sistema processa vários movimentos de entrada concorrentes para "PAO-UN"
     Então continua existindo apenas um registro de saldo para "PAO-UN"
@@ -33,5 +33,5 @@ Funcionalidade: Saldos de estoque por SKU
 
   Cenário: SKUs de kit não têm saldo próprio
     Dado o kit "Café da Manhã Completo" com seu próprio SKU
-    Quando Cesar consulta os registros de saldo da organization
+    Quando Cesar consulta os registros de saldo da loja
     Então o SKU do kit não tem registro de saldo (é derivado dos componentes)

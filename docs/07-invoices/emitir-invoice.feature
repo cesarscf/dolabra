@@ -7,7 +7,7 @@ Funcionalidade: Emitir uma invoice (draft → issued)
   snapshot do customer (dados fiscais).
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA" no estado "SP" com regime "Simples Nacional"
+    Dado a loja "Padaria do Cesar LTDA" no estado "SP" com regime "Simples Nacional"
     E o customer "Restaurante Sabor" no estado "SP" com CNPJ e endereço de billing cadastrados
     E o tax_group "Alimento — padaria" do produto "Pão Francês":
       | Campo              | Valor       |
@@ -27,7 +27,7 @@ Funcionalidade: Emitir uma invoice (draft → issued)
     Quando Cesar emite a invoice
     Então o status da invoice passa para "issued"
     E o campo "issued_at" é preenchido com o momento da emissão
-    E a invoice recebe o número "INV-NNNNNN" da sequência da organization (atribuído lazy só agora)
+    E a invoice recebe o número "INV-NNNNNN" da sequência da loja (atribuído lazy só agora)
     E um movimento de estoque "out" é gerado por SKU (reference_type "sales_invoice")
     E CARs são gerados (ver cenário de geração de CAR)
     E um snapshot fiscal é copiado para cada invoice_item

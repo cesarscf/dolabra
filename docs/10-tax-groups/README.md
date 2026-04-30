@@ -71,7 +71,7 @@ Tax groups são atribuídos no nível de **product**, não no nível de SKU — 
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `name` | string | Rótulo definido pelo usuário. ex.: "Vestuário — nacional" |
 | `ncm` | string | Código NCM de 8 dígitos |
 | `cest` | string | Nullable. Obrigatório em cenários de ICMS-ST |
@@ -94,13 +94,13 @@ Tax groups são atribuídos no nível de **product**, não no nível de SKU — 
 
 ## Notas sobre a seleção de CFOP
 
-O CFOP correto depende de o comprador estar ou não no mesmo estado do vendedor. No momento do faturamento, o sistema compara o estado da org (`organization.state`) com o estado do customer (`contact_address.state`) para escolher entre `cfop_same_state` e `cfop_other_state` do tax group.
+O CFOP correto depende de o comprador estar ou não no mesmo estado do vendedor. No momento do faturamento, o sistema compara o estado da org (`loja.state`) com o estado do customer (`contact_address.state`) para escolher entre `cfop_same_state` e `cfop_other_state` do tax group.
 
 ## Notas sobre ICMS CST vs CSOSN
 
 - Empresas no **Simples Nacional** (`tax_regime = simples_nacional`) usam códigos **CSOSN** (3 dígitos).
 - Empresas no **Lucro Presumido** ou **Lucro Real** usam códigos **CST** (2 dígitos).
-- O campo `icms_cst` guarda o que for aplicável. A camada de renderização da invoice usa `organization.tax_regime` para rotulá-lo corretamente na NF-e (pós-MVP).
+- O campo `icms_cst` guarda o que for aplicável. A camada de renderização da invoice usa `loja.tax_regime` para rotulá-lo corretamente na NF-e (pós-MVP).
 
 ## Snapshot no faturamento
 

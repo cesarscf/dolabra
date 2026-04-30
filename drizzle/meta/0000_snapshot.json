@@ -1,5 +1,5 @@
 {
-  "id": "de656d19-dd5b-4c15-bf80-8833683df35e",
+  "id": "01fc3631-b682-418b-af9d-aa40133ac8fc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -168,8 +168,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "organization_id": {
-          "name": "organization_id",
+        "store_id": {
+          "name": "store_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -214,11 +214,11 @@
         }
       },
       "indexes": {
-        "invitations_organizationId_idx": {
-          "name": "invitations_organizationId_idx",
+        "invitations_storeId_idx": {
+          "name": "invitations_storeId_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "store_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -246,12 +246,12 @@
         }
       },
       "foreignKeys": {
-        "invitations_organization_id_organizations_id_fk": {
-          "name": "invitations_organization_id_organizations_id_fk",
+        "invitations_store_id_stores_id_fk": {
+          "name": "invitations_store_id_stores_id_fk",
           "tableFrom": "invitations",
-          "tableTo": "organizations",
+          "tableTo": "stores",
           "columnsFrom": [
-            "organization_id"
+            "store_id"
           ],
           "columnsTo": [
             "id"
@@ -289,8 +289,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "organization_id": {
-          "name": "organization_id",
+        "store_id": {
+          "name": "store_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -316,11 +316,11 @@
         }
       },
       "indexes": {
-        "members_organizationId_idx": {
-          "name": "members_organizationId_idx",
+        "members_storeId_idx": {
+          "name": "members_storeId_idx",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "store_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -348,12 +348,12 @@
         }
       },
       "foreignKeys": {
-        "members_organization_id_organizations_id_fk": {
-          "name": "members_organization_id_organizations_id_fk",
+        "members_store_id_stores_id_fk": {
+          "name": "members_store_id_stores_id_fk",
           "tableFrom": "members",
-          "tableTo": "organizations",
+          "tableTo": "stores",
           "columnsFrom": [
-            "organization_id"
+            "store_id"
           ],
           "columnsTo": [
             "id"
@@ -377,79 +377,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.organizations": {
-      "name": "organizations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "logo": {
-          "name": "logo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "organizations_slug_uidx": {
-          "name": "organizations_slug_uidx",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "organizations_slug_unique": {
-          "name": "organizations_slug_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -507,8 +434,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "active_organization_id": {
-          "name": "active_organization_id",
+        "active_store_id": {
+          "name": "active_store_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -553,6 +480,79 @@
           "nullsNotDistinct": false,
           "columns": [
             "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stores": {
+      "name": "stores",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logo": {
+          "name": "logo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "stores_slug_uidx": {
+          "name": "stores_slug_uidx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "stores_slug_unique": {
+          "name": "stores_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
           ]
         }
       },

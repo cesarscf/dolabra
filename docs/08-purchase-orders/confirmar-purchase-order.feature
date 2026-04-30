@@ -6,7 +6,7 @@ Funcionalidade: Confirmar um pedido de compra
   (Bills) é gerado automaticamente, uma linha por parcela do payment_term.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido de compra em "draft" com total R$ 2.480,00
     E payment_term "30/60/90" com 3 parcelas iguais de 33,33%/33,33%/33,34%
 

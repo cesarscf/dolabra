@@ -6,7 +6,7 @@ Funcionalidade: Alterar o kit_price_mode de um kit existente
   kits bloqueados em vendas.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E a tabela de preço default "Varejo"
     E o kit "Café da Manhã Completo" com componentes já cadastrados
 

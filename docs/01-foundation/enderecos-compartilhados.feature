@@ -1,19 +1,19 @@
 # language: pt
 
-Funcionalidade: Endereços reutilizáveis por organizations e contacts
+Funcionalidade: Endereços reutilizáveis por lojas e contacts
   Endereços vivem numa entidade própria, reutilizada por quem precisa de
-  endereço físico (organization, contact, no futuro filiais etc.). Isso evita
+  endereço físico (loja, contact, no futuro filiais etc.). Isso evita
   duplicação e mantém os campos do endereço (rua, cidade, UF, CEP) em um
   único lugar.
 
-  Cenário: Vincular endereço à organization
-    Dado a organization "Padaria do Cesar LTDA"
-    Quando o endereço "Rua das Flores, 123 — Centro, São Paulo/SP — 01010-000" é cadastrado e vinculado à organization
-    Então a organization passa a exibir esse endereço como endereço fiscal
+  Cenário: Vincular endereço à loja
+    Dado a loja "Padaria do Cesar LTDA"
+    Quando o endereço "Rua das Flores, 123 — Centro, São Paulo/SP — 01010-000" é cadastrado e vinculado à loja
+    Então a loja passa a exibir esse endereço como endereço fiscal
 
-  Cenário: Endereços também são escopados por organization
-    Dado a organization "Padaria do Cesar LTDA" com um endereço cadastrado
-    E a organization "Bicicletaria Express LTDA" sem nenhum endereço
+  Cenário: Endereços também são escopados por loja
+    Dado a loja "Padaria do Cesar LTDA" com um endereço cadastrado
+    E a loja "Bicicletaria Express LTDA" sem nenhum endereço
     Quando se consulta endereços da "Bicicletaria Express LTDA"
     Então o endereço da padaria não aparece
 

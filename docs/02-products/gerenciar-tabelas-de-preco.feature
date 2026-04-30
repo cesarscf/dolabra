@@ -2,11 +2,11 @@
 
 Funcionalidade: Tabelas de preço
   Produtos são precificados via tabelas de preço (Varejo, Atacado, etc.).
-  Cada organization tem suas tabelas; uma delas é a default. Customers podem
+  Cada loja tem suas tabelas; uma delas é a default. Customers podem
   ter uma tabela default própria que pré-preenche o pedido.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o SKU "PAO-UN" do produto "Pão Francês"
 
   Cenário: Criar múltiplas tabelas de preço
@@ -15,10 +15,10 @@ Funcionalidade: Tabelas de preço
       | Varejo      | sim        |
       | Atacado     | não        |
       | Revendedor  | não        |
-    Então a organization tem 3 tabelas de preço
+    Então a loja tem 3 tabelas de preço
     E apenas "Varejo" é a default
 
-  Cenário: Uma única tabela default por organization
+  Cenário: Uma única tabela default por loja
     Dado que "Varejo" é a tabela default
     Quando Cesar marca "Atacado" como default
     Então "Atacado" vira default

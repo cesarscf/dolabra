@@ -7,11 +7,11 @@ Funcionalidade: Árvore de categorias
   dado fiscal — tudo que é fiscal vive em tax_group.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Criar categoria raiz
     Quando Cesar cria a categoria "Padaria" sem pai
-    Então "Padaria" existe como categoria raiz da organization
+    Então "Padaria" existe como categoria raiz da loja
 
   Cenário: Criar subcategorias em profundidade
     Dado a categoria raiz "Padaria"

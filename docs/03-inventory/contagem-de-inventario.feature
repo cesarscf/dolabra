@@ -7,7 +7,7 @@ Funcionalidade: Contagem de inventário
   diferença.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o SKU "PAO-UN" com saldo 50
     E o SKU "MAN-200G" com saldo 40
     E o SKU "CAF-250G" com saldo 25
@@ -44,7 +44,7 @@ Funcionalidade: Contagem de inventário
     E o saldo de "PAO-UN" passa a ser 48
     E o saldo de "MAN-200G" passa a ser 42
 
-  Cenário: No máximo uma contagem em progresso por organization
+  Cenário: No máximo uma contagem em progresso por loja
     Dado que existe uma contagem com status "in_progress"
     Quando Cesar tenta iniciar outra contagem
     Então a operação é rejeitada com a mensagem "Já existe uma contagem em andamento"

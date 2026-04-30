@@ -8,7 +8,7 @@ Funcionalidade: Faturamento parcial de um pedido
   pedida — defesa contra faturar mais do que o cliente pediu.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido em "approved" com os itens:
       | SKU       | Qty pedida |
       | PAO-UN    | 100        |

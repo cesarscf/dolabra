@@ -66,7 +66,7 @@ Um cadastro unificado para customers e suppliers. Um único registro de contact 
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `type` | enum | `customer \| supplier \| both` |
 | `person_type` | enum | `individual \| company` |
 | `tax_id` | string | CPF (11 dígitos) ou CNPJ (14 dígitos), conforme `person_type`. Obrigatório. Único por org. **Armazenado apenas com dígitos** (sem máscara) — a UI cuida da formatação na exibição |
@@ -119,11 +119,11 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 ### A1. Address: tabela compartilhada vs. por entidade
 
-**Onde**: dois modelos coexistiam — Foundation definia `address` compartilhada (referenciada via `address_id`), e Contacts definia `contact_address` com campos inline e FK em `contact_id`. Um contact pode ter vários endereços (main/billing/shipping, `is_default`); uma organization tem um só. Não estava claro se address era compartilhado ou por entidade.
+**Onde**: dois modelos coexistiam — Foundation definia `address` compartilhada (referenciada via `address_id`), e Contacts definia `contact_address` com campos inline e FK em `contact_id`. Um contact pode ter vários endereços (main/billing/shipping, `is_default`); uma loja tem um só. Não estava claro se address era compartilhado ou por entidade.
 
 **Decisão**: **única tabela `address` compartilhada**.
 
-- `organization.address_id` continua apontando para `address`.
+- `loja.address_id` continua apontando para `address`.
 - `contact_address` vira tabela-ponte: `id`, `contact_id` FK, `address_id` FK, `type (main|billing|shipping)`, `is_default`. Sem campos de endereço inline.
 - Campos de endereço (`street`, `number`, …) vivem só em `address`.
 - Entidades futuras (filiais, shipping avulso, etc.) reutilizam `address` diretamente.
@@ -147,7 +147,7 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 - Simples e previsível: o crédito conta dinheiro que já virou direito de receber (CAR), não pedido em curso.
 - Risco: cliente faz N pedidos `approved` paralelos sem faturar e estoura o limite na soma. Aceitável no MVP — operação manual identifica.
 - Quando o pedido é faturado, o CAR aparece e a verificação no próximo pedido passa a refletir.
-- Extensão futura: incluir `approved/picking` via setting `organization.credit_limit_includes_unbilled_orders` (default `false` para preservar comportamento atual).
+- Extensão futura: incluir `approved/picking` via setting `loja.credit_limit_includes_unbilled_orders` (default `false` para preservar comportamento atual).
 
 **Status**: `decided`
 
@@ -155,5 +155,5 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 - **A5** — `payment_terms` como string livre vs. estrutura (afeta `contact.default_payment_term_id`). Decisão completa em [Financial → A5](../09-financial/README.md#a5-payment_terms-como-string-livre-vs-estrutura).
 - **B3** — Credit limit: bloqueia, alerta ou exige aprovação? (define o significado de `contact.credit_limit`). Decisão completa em [Sales Orders → B3](../06-sales-orders/README.md#b3-credit-limit-do-contact-bloqueia-alerta-ou-exige-aprovação).
-- **C7** — Validação de DV em CNPJ/CPF (mesma regra usada em organization). Decisão completa em [Foundation → C7](../01-foundation/README.md#c7-validação-de-dv-em-cnpjcpf-é-obrigatória).
+- **C7** — Validação de DV em CNPJ/CPF (mesma regra usada em loja). Decisão completa em [Foundation → C7](../01-foundation/README.md#c7-validação-de-dv-em-cnpjcpf-é-obrigatória).
 - **Convenções globais** — política de delete, validação de documentos brasileiros: [docs/00-globais/README.md](../00-globais/README.md).

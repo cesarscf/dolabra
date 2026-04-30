@@ -6,7 +6,7 @@ Funcionalidade: Endereços do contact
   Para cada tipo, um endereço pode ser marcado como default.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o customer "Restaurante Sabor"
 
   Cenário: Um contact pode ter vários endereços classificados
@@ -40,6 +40,6 @@ Funcionalidade: Endereços do contact
 
   Cenário: Endereços compartilham a tabela global de endereços
     Dado o contact "Restaurante Sabor" com endereço "Av. Principal, 100"
-    E a organization "Padaria do Cesar LTDA" também usando "Av. Principal, 100" como endereço fiscal
+    E a loja "Padaria do Cesar LTDA" também usando "Av. Principal, 100" como endereço fiscal
     Quando Cesar inspeciona os endereços cadastrados
     Então não existe duplicação nos campos street/city/state/zipCode — o mesmo endereço é referenciado pelos dois

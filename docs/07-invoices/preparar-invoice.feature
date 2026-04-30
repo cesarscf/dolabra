@@ -7,7 +7,7 @@ Funcionalidade: Preparar uma invoice em draft
   snapshots — tudo isso acontece apenas na transição para "issued".
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido em status "approved" com os itens:
       | SKU      | Qty pedida | Unit price |
       | PAO-UN   | 100        | R$ 0,75    |

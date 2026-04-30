@@ -8,7 +8,7 @@ Funcionalidade: Rateio de despesas acessórias no custo do recebimento
   despesas "adiantadas".
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E um pedido de compra "PO-000001" em "confirmed" com os itens:
       | SKU          | Qty pedida | Unit cost | Subtotal  |
       | FARINHA-25KG | 20         | R$ 90,00  | R$ 1.800  |

@@ -6,7 +6,7 @@ Funcionalidade: Fluxo de caixa (realizado e projetado)
   CARs/Bills em aberto agrupados por due_date.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E a data atual é 2026-04-23
 
   Cenário: Fluxo realizado vem dos pagamentos efetivados
@@ -57,7 +57,7 @@ Funcionalidade: Fluxo de caixa (realizado e projetado)
     Então apenas os eventos de abril aparecem
     E pagamentos de março e maio ficam de fora
 
-  Cenário: Fluxo é escopado por organization
-    Dado a organization "Bicicletaria Express LTDA" com seus próprios pagamentos
+  Cenário: Fluxo é escopado por loja
+    Dado a loja "Bicicletaria Express LTDA" com seus próprios pagamentos
     Quando Cesar, atuando na "Padaria do Cesar LTDA", consulta o fluxo de caixa
     Então apenas pagamentos da padaria aparecem

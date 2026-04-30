@@ -70,7 +70,7 @@ draft → [awaiting_approval] → approved → picking → invoiced → cancelle
    (rejeição volta para draft — ver B19)
 ```
 
-A etapa `awaiting_approval` é controlada pelo setting `organization.requires_sales_order_approval` (ver [Foundation → A7](../01-foundation/README.md#a7-setting-de-aprovação-por-organization)). Quando `false`, os pedidos vão direto de `draft` para `approved`.
+A etapa `awaiting_approval` é controlada pelo setting `loja.requires_sales_order_approval` (ver [Foundation → A7](../01-foundation/README.md#a7-setting-de-aprovação-por-loja)). Quando `false`, os pedidos vão direto de `draft` para `approved`.
 
 **Exceção — credit limit excedido**: mesmo em orgs com o setting desligado, se o customer tem `credit_limit` definido e
 
@@ -101,7 +101,7 @@ Um pedido passa para `invoiced` assim que a primeira invoice parcial é emitida 
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `number` | string | Número legível do pedido (ex.: `SO-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md) |
 | `status` | enum | Ver fluxo de status acima |
 | `customer_id` | uuid | FK → `contact` (type precisa incluir `customer`) |

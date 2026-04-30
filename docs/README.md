@@ -10,7 +10,7 @@ Cada pasta `NN-feature/` contém:
 ```
 docs/
 ├── 00-globais/         # Convenções transversais (arredondamento, delete, validações, idempotência)
-├── 01-foundation/      # Auth, organizations, numeração de documentos, endereços
+├── 01-foundation/      # Auth, lojas, numeração de documentos, endereços
 ├── 02-products/        # Produtos, SKUs, atributos, categorias, kits, tabelas de preço
 ├── 03-inventory/       # Saldos, movimentos, contagens, custo médio
 ├── 04-contacts/        # Customers e suppliers

@@ -6,7 +6,7 @@ Funcionalidade: Ciclo de vida do status do produto
   (irreversível). Cada status define onde o produto aparece no ERP.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o produto "Pão Francês" em status "draft"
 
   Cenário: Publicar produto (draft → active)

@@ -6,7 +6,7 @@ Funcionalidade: Criar um pedido de venda
   Os totais são derivados dos itens.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o customer "Restaurante Sabor" com default_seller "Ana", default_price_list "Atacado" e default_payment_term "30/60"
     E o SKU "PAO-UN" com preço R$ 0,75 na tabela "Atacado"
     E o SKU "CAF-250G" com preço R$ 12,00 na tabela "Atacado"
@@ -38,7 +38,7 @@ Funcionalidade: Criar um pedido de venda
     Então o total do pedido é R$ 120,00
 
   Cenário: Pedido recebe número sequencial
-    Dado que 3 pedidos já foram criados na organization
+    Dado que 3 pedidos já foram criados na loja
     Quando Cesar cria mais um pedido e salva
     Então o número gerado é "SO-000004"
 

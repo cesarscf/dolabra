@@ -7,14 +7,14 @@ Funcionalidade: Templates de condição de pagamento (payment_term)
   em vez de interpretar strings.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
 
   Cenário: Criar payment_term "À vista"
     Quando Cesar cria o payment_term:
       | Name    | Is default | Parcelas                              |
       | À vista | sim        | [sequence=1, days_offset=0, pct=100]  |
     Então "À vista" é criado com 1 parcela
-    E é a condição default da organization
+    E é a condição default da loja
 
   Cenário: Criar payment_term "30/60/90" (3 parcelas iguais)
     Quando Cesar cria o payment_term:
@@ -34,7 +34,7 @@ Funcionalidade: Templates de condição de pagamento (payment_term)
     Quando Cesar tenta criar um payment_term cujas parcelas somam 99,00
     Então a operação é rejeitada com a mensagem "A soma dos percentuais precisa ser 100"
 
-  Cenário: Uma única default por organization
+  Cenário: Uma única default por loja
     Dado que "À vista" é a default
     Quando Cesar marca "30/60/90" como default
     Então "30/60/90" vira default

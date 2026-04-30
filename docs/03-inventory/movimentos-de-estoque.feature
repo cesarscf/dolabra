@@ -7,7 +7,7 @@ Funcionalidade: Movimentos de estoque
   criando novos movimentos.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA"
+    Dado a loja "Padaria do Cesar LTDA"
     E o SKU "PAO-UN" com saldo 50 unidades e custo médio R$ 0,30
 
   Esquema do Cenário: Direção e efeito por tipo de movimento

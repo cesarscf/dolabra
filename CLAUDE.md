@@ -17,7 +17,7 @@ Se a doc não cobre o caso, **pare e pergunte** antes de chutar. Não invente re
 Os módulos têm dependências reais — siga essa sequência:
 
 ```
-1. Foundation        (org, member, address, document_sequence)
+1. Foundation        (store, member, address, document_sequence)
 2. Contacts
 3. Tax Groups        → 4. Products (Products precisa de tax_group)
 5. Sellers
@@ -55,6 +55,26 @@ A doc tem ~330 cenários Gherkin. Não significa "escreva 330 testes antes da pr
 - Integração com Better Auth (já testado upstream).
 - Migrations (rode contra ambiente local).
 
+### Fixture de testes (Better Auth `testUtils`)
+
+Testes de domínio precisam de `store` + `user` + `member` seedados pra rodar — não monte isso à mão. Use o plugin [`testUtils()`](https://better-auth.com/docs/plugins/test-utils) do Better Auth numa instância test-only do auth (separada de `src/lib/auth.ts`):
+
+```ts
+const ctx = await authForTests.$context
+const test = ctx.test
+
+const user  = test.createUser({ email: "alice@test.dev" })
+await test.saveUser(user)
+const store = test.createOrganization({ name: "Padaria", slug: "padaria" })
+await test.saveOrganization(store)
+await test.addMember({ userId: user.id, organizationId: store.id, role: "owner" })
+
+const headers = await test.getAuthHeaders({ userId: user.id })
+```
+
+- `createOrganization`/`saveOrganization` escrevem na tabela `stores` (graças ao `schema.organization.modelName: "store"`).
+- `testUtils` **não** entra no `auth.ts` de produção — só na instância de teste.
+
 ## Padrões de código a seguir
 
 ### Permissões (deferred — mas codifique o stub agora)
@@ -66,10 +86,10 @@ A matriz de roles × operações está deferida até o core estar implementado. 
 export function canDo(
   user: User,
   action: string,
-  resource: { organizationId: string; [key: string]: unknown },
+  resource: { storeId: string; [key: string]: unknown },
 ): boolean {
-  // TODO: módulo de permissões granulares — por enquanto qualquer membro da org pode tudo
-  return user.organizationId === resource.organizationId;
+  // TODO: módulo de permissões granulares — por enquanto qualquer membro da loja pode tudo
+  return user.storeId === resource.storeId;
 }
 ```
 
@@ -77,9 +97,9 @@ Toda action sensível (cancelar invoice, encerrar PO, criar Bill manual, deletar
 
 ### Tenancy (a invariante mais importante)
 
-Toda query de tabela de domínio **precisa** filtrar por `organization_id`. Não há exceção. Se você está escrevendo uma query sem `organizationId`, está errado.
+Toda query de tabela de domínio **precisa** filtrar por `store_id`. Não há exceção. Se você está escrevendo uma query sem `storeId`, está errado.
 
-Padronize via repository/service que recebe `organizationId` no construtor — nunca aceite query "global".
+Padronize via repository/service que recebe `storeId` no construtor — nunca aceite query "global".
 
 ### Transações para efeitos colaterais
 
@@ -128,13 +148,13 @@ Estas estão documentadas e podem aparecer durante implementação. **Não inven
 
 ## Onboarding/seed
 
-Ao criar uma organization, o sistema deve criar automaticamente:
+Ao criar uma store, o sistema deve criar automaticamente:
 
 - `document_sequence` para `sales_order`, `purchase_order`, `invoice` com `next_value = 1`.
 - 1 `payment_term` "À vista" (1 parcela, 0 dias, 100%) marcado como default.
 - 1 `price_list` "Varejo" marcado como default.
 
-Sem isso o usuário não consegue criar o primeiro pedido. Implemente como parte do flow de criação de org, na mesma transação.
+Sem isso o usuário não consegue criar o primeiro pedido. Implemente como parte do flow de criação de store, na mesma transação.
 
 ## Quando bater dúvida
 

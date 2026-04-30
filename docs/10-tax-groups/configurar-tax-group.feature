@@ -7,7 +7,7 @@ Funcionalidade: Configurar um tax_group
   campos fiscais.
 
   Contexto:
-    Dado a organization "Padaria do Cesar LTDA" com regime "Simples Nacional"
+    Dado a loja "Padaria do Cesar LTDA" com regime "Simples Nacional"
 
   Cenário: Cadastrar tax_group típico de padaria
     Quando Cesar cadastra o tax_group:

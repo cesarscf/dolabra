@@ -59,7 +59,7 @@ Um registro por SKU representando a quantidade atualmente em mãos.
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy |
+| `store_id` | uuid | Chave de tenancy |
 | `sku_id` | uuid | FK → `sku` |
 | `quantity` | decimal | Quantidade atual em mãos. Nunca editada diretamente — atualizada via movimentos |
 | `average_cost` | decimal | Custo médio ponderado móvel. Recalculado a cada movimento de entrada |
@@ -67,7 +67,7 @@ Um registro por SKU representando a quantidade atualmente em mãos.
 | `reorder_point` | decimal | Gatilho sugerido para reposição. Nullable |
 | `updated_at` | timestamp | |
 
-Constraint: `UNIQUE (organization_id, sku_id)` — garante 1 registro por SKU.
+Constraint: `UNIQUE (store_id, sku_id)` — garante 1 registro por SKU.
 
 ## Stock movements
 
@@ -76,7 +76,7 @@ Toda mudança de estoque é registrada como um movimento imutável. Os saldos s�
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `sku_id` | uuid | FK → `sku` |
 | `type` | enum | `in \| out \| adjustment_in \| adjustment_out` |
 | `quantity` | decimal | Sempre positiva. A direção é determinada pelo `type` (`in` e `adjustment_in` somam; `out` e `adjustment_out` subtraem) |
@@ -113,20 +113,20 @@ Contagem física que reconcilia o saldo do sistema com o estoque físico real.
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | |
+| `store_id` | uuid | |
 | `status` | enum | `draft \| in_progress \| completed` |
 | `notes` | text | Nullable |
 | `created_at` | timestamp | |
 | `completed_at` | timestamp | Nullable |
 
-Constraint: partial unique index em `(organization_id)` onde `status = 'in_progress'` — uma org pode ter **no máximo um count em `in_progress`** por vez. Counts paralelos por escopo (categoria/filial) ficam para pós-MVP.
+Constraint: partial unique index em `(store_id)` onde `status = 'in_progress'` — uma org pode ter **no máximo um count em `in_progress`** por vez. Counts paralelos por escopo (categoria/filial) ficam para pós-MVP.
 
 **`inventory_count_item`**
 
 | Campo | Tipo | Observações |
 |---|---|---|
 | `id` | uuid | |
-| `organization_id` | uuid | Chave de tenancy (denormalizada do `inventory_count` pai, para consistência com a invariante de tenancy e facilitar RLS) |
+| `store_id` | uuid | Chave de tenancy (denormalizada do `inventory_count` pai, para consistência com a invariante de tenancy e facilitar RLS) |
 | `inventory_count_id` | uuid | |
 | `sku_id` | uuid | |
 | `system_quantity` | decimal | Snapshot do saldo no início da contagem |
@@ -156,7 +156,7 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Onde**: o módulo dizia "um registro por SKU" mas o schema não declarava unique constraint.
 
-**Decisão**: **unique `(organization_id, sku_id)` em `stock_balance`**. DB garante a invariante; sem constraint, race conditions em upsert podem criar duplicatas.
+**Decisão**: **unique `(store_id, sku_id)` em `stock_balance`**. DB garante a invariante; sem constraint, race conditions em upsert podem criar duplicatas.
 
 **Status**: `decided`
 
@@ -166,7 +166,7 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Decisão**: **um count por vez por org**. Enquanto houver count em `in_progress`, não pode abrir outro.
 
-- Constraint: partial unique index em `inventory_count (organization_id)` onde `status = 'in_progress'`.
+- Constraint: partial unique index em `inventory_count (store_id)` onde `status = 'in_progress'`.
 - Counts paralelos por escopo (categoria/filial) ficam para pós-MVP, junto com multi-filial.
 
 **Status**: `decided`
@@ -184,11 +184,11 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 **Status**: `decided`
 
-### C2. `inventory_count_item` sem `organization_id`
+### C2. `inventory_count_item` sem `store_id`
 
-**Onde**: `inventory_count_item` herdava tenancy via `inventory_count_id`, exigindo join para qualquer query — inconsistente com a invariante de "toda tabela de domínio tem `organization_id`".
+**Onde**: `inventory_count_item` herdava tenancy via `inventory_count_id`, exigindo join para qualquer query — inconsistente com a invariante de "toda tabela de domínio tem `store_id`".
 
-**Decisão**: **denormalizar `organization_id` em `inventory_count_item`**. Consistente com o princípio do módulo Foundation e facilita RLS/queries.
+**Decisão**: **denormalizar `store_id` em `inventory_count_item`**. Consistente com o princípio do módulo Foundation e facilita RLS/queries.
 
 **Status**: `decided`
 

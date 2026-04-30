@@ -17,7 +17,7 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
 
-  database: drizzleAdapter(db, { provider: "pg",usePlural:true }),
+  database: drizzleAdapter(db, { provider: "pg", usePlural: true }),
 
   emailAndPassword: {
     enabled: true,
@@ -37,10 +37,21 @@ export const auth = betterAuth({
   plugins: [
     organization({
       allowUserToCreateOrganization: true,
-      sendInvitationEmail: async ({ email, organization, inviter, invitation }) => {
-        await sendEmailStub("org-invitation", {
+      schema: {
+        organization: { modelName: "store" },
+        member: { fields: { organizationId: "storeId" } },
+        invitation: { fields: { organizationId: "storeId" } },
+        session: { fields: { activeOrganizationId: "activeStoreId" } },
+      },
+      sendInvitationEmail: async ({
+        email,
+        organization,
+        inviter,
+        invitation,
+      }) => {
+        await sendEmailStub("store-invitation", {
           to: email,
-          org: organization.name,
+          store: organization.name,
           inviter: inviter.user.email,
           invitationId: invitation.id,
         });
