@@ -35,7 +35,7 @@ As decisões que travam schema/comportamento (originalmente centralizadas em um 
 
 | Bloco | Tipo | Donas |
 |---|---|---|
-| **A** | Estruturais (travam schema) | A1 → Contacts; A2, A3 → Products; A4 → Invoices; A5 → Financial; A6 → Purchase Orders |
-| **B** | Comportamentais | B1, B2, B4 → Financial; B3 → Sales Orders; B5 → Sellers; B6 → Foundation; B7 → Tax Groups |
+| **A** | Estruturais (travam schema) | A1 → Contacts; A2, A3 → Products; A4 → Invoices; A5, A8 → Financial; A6 → Purchase Orders; A7 → Foundation |
+| **B** | Comportamentais | B1, B2, B4, B14 → Financial; B3, B8, B10, B11 → Sales Orders; B5, B12, B13 → Sellers; B6, B18 → Foundation; B7, B15 → Tax Groups; B9, B16 → Invoices; B17 → Purchase Orders |
 | **D** | Achados durante propagação | D1, D7, D9 → Inventory; D2, D3 → Products; D4 → Financial; D5 → Purchase Orders; D6 → Foundation; D8 → Invoices |
-| **C** | Gaps menores | C1 → Products; C2 → Inventory; C3 → Sales Orders; C4 → Contacts |
+| **C** | Gaps menores | C1, C5 → Products; C2 → Inventory; C3 → Sales Orders; C4 → Contacts |

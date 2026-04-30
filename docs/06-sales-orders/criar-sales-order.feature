@@ -50,3 +50,20 @@ Funcionalidade: Criar um pedido de venda
   Cenário: Pedido exige payment_term
     Quando Cesar tenta salvar um pedido sem informar payment_term
     Então a operação é rejeitada com a mensagem "Condição de pagamento é obrigatória"
+
+  Cenário: SKU inativo não pode ser adicionado a um pedido
+    Dado o produto "Pão Antigo" com status "inactive"
+    Quando Cesar tenta adicionar o SKU de "Pão Antigo" a um novo pedido
+    Então a operação é rejeitada com a mensagem "SKU não está disponível para venda"
+
+  Cenário: SKU arquivado não pode ser adicionado a um pedido
+    Dado o produto "Pão Descontinuado" com status "archived"
+    Quando Cesar tenta adicionar o SKU de "Pão Descontinuado" a um novo pedido
+    Então a operação é rejeitada com a mensagem "SKU não está disponível para venda"
+
+  Cenário: Inativar SKU não cancela itens já adicionados
+    Dado um pedido em "draft" contendo o SKU "PAO-UN" do produto "Pão Francês" (active)
+    Quando o produto "Pão Francês" é mudado para "inactive"
+    Então o item permanece no pedido sem alteração
+    E o pedido segue o fluxo normal (pode ser confirmado, faturado etc.)
+    Mas tentar adicionar mais um item do mesmo SKU é rejeitado

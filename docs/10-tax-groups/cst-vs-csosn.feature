@@ -9,19 +9,23 @@ Funcionalidade: Interpretação de ICMS CST vs CSOSN conforme o regime
 
   O campo é o mesmo na tabela — o rótulo e a validação mudam.
 
-  Cenário: Simples Nacional usa CSOSN
+  Cenário: Simples Nacional aceita CSOSN
     Dado a organization "Padaria do Cesar LTDA" com regime "Simples Nacional"
     Quando Cesar cadastra um tax_group com icms_cst "102"
     Então o valor é aceito e rotulado como "CSOSN" na UI
 
-    Quando Cesar tenta cadastrar outro tax_group com icms_cst "00"
+  Cenário: Simples Nacional rejeita CST
+    Dado a organization "Padaria do Cesar LTDA" com regime "Simples Nacional"
+    Quando Cesar tenta cadastrar um tax_group com icms_cst "00"
     Então a validação rejeita com a mensagem "Para Simples Nacional, use um CSOSN de 3 dígitos"
 
-  Cenário: Lucro Presumido usa CST
+  Cenário: Lucro Presumido aceita CST
     Dado a organization "Bicicletaria Express LTDA" com regime "Lucro Presumido"
     Quando Cesar cadastra um tax_group com icms_cst "00"
     Então o valor é aceito e rotulado como "CST" na UI
 
+  Cenário: Lucro Presumido rejeita CSOSN
+    Dado a organization "Bicicletaria Express LTDA" com regime "Lucro Presumido"
     Quando Cesar tenta cadastrar um tax_group com icms_cst "102"
     Então a validação rejeita com a mensagem "Para Lucro Presumido, use um CST de 2 dígitos"
 

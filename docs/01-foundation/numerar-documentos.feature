@@ -44,3 +44,17 @@ Funcionalidade: Numerar documentos sequencialmente
     Então o número interno "INV-000042" identifica a nota no Dolabra
     E o número fiscal "0000999" identifica a nota no fisco
     E nenhum dos dois sobrescreve o outro
+
+  Cenário: Numeração da invoice é lazy — só atribuída na emissão
+    Dado que a próxima invoice da empresa seria "INV-000010"
+    Quando Cesar prepara uma invoice em "draft" a partir de um pedido
+    Então o draft existe sem número da sequência INV
+    Quando Cesar emite a invoice (transição draft → issued)
+    Então a invoice recebe o número "INV-000010"
+    E a próxima invoice a ser emitida receberá "INV-000011"
+
+  Cenário: Draft de invoice descartado não consome número da sequência
+    Dado que a próxima invoice da empresa seria "INV-000010"
+    Quando Cesar prepara um draft de invoice e logo descarta
+    Então nenhum número INV foi consumido
+    E a próxima invoice emitida ainda receberá "INV-000010"

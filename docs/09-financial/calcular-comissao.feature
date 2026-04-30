@@ -67,3 +67,17 @@ Funcionalidade: Cálculo de comissão (disparado por CAR paid)
     Quando os 3 CARs são pagos em momentos diferentes
     Então os 3 Bills de comissão gerados somam exatamente R$ 100,00
     # o último absorve o arredondamento
+
+  Cenário: Bill de comissão vence no mesmo dia em que é gerado (MVP)
+    Dado um CAR pago em 2026-04-23
+    Quando o Bill de comissão é gerado
+    Então due_date do Bill é 2026-04-23
+    # vencimento imediato no MVP, vira setting da org no futuro
+
+  Cenário: Recebimento em excesso (juros) não infla a comissão
+    Dado um CAR de R$ 500,00 e a comissão proporcional seria R$ 25,00
+    E o cliente paga R$ 520,00 (R$ 20,00 de juros)
+    Quando o CAR vira "paid"
+    Então o paid_amount do CAR é R$ 520,00
+    E o extra_amount do CAR é R$ 20,00
+    E o Bill de comissão gerado é R$ 25,00 (calculado sobre o amount original, não sobre o pago)

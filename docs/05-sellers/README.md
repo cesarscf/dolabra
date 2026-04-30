@@ -77,6 +77,8 @@ Constraint: `user_id IS NOT NULL OR email IS NOT NULL OR phone IS NOT NULL` — 
 
 Um seller pode ter uma taxa de comissão diferente para categorias específicas de produto. Se existir um override para a categoria, ele tem precedência sobre `default_commission_pct` para os itens dessa categoria.
 
+A regra de match é **estrita**: o override só vale para a categoria exata atribuída ao produto. **Não há herança na árvore** — um override em "Padaria" não se aplica a produtos em "Pães Doces" (categoria filha). Para cobrir uma sub-árvore inteira, cadastre overrides explícitos para cada categoria. Ver [B12](#b12-override-de-comissão-é-estrito-sem-herança-na-árvore).
+
 **`seller_category_commission`**
 
 | Campo | Tipo | Observações |
@@ -105,6 +107,30 @@ Ou seja, o módulo Sellers só armazena as regras — nunca escreve em tabelas d
 ## Decisões arquiteturais
 
 Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`B5`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### B12. Override de comissão é estrito, sem herança na árvore
+
+**Onde**: a árvore de categorias é ilimitada. Não estava definido se um override em "Padaria" valeria para um produto em "Pães Doces" (subcategoria).
+
+**Decisão**: **estrito**. O override só vale para a categoria exata do produto.
+
+- Combina com a filosofia "modelo enxuto, sem catch-all" já adotada em [Financial → D4](../09-financial/README.md#d4-comissão-quando-o-produto-não-tem-categoria) (produto sem categoria sempre usa default).
+- Para cobrir uma sub-árvore inteira, o usuário cadastra overrides em cada categoria.
+- Sem ambiguidade de "qual override ganha" quando há overrides em vários níveis da árvore.
+
+**Status**: `decided`
+
+### B13. Seller desativado mantém comissão sobre pedidos antigos
+
+**Onde**: se um seller for desativado depois de criar um sales_order, o cálculo de comissão (disparado por CAR paid) precisa de uma regra clara.
+
+**Decisão**: **comissão segue normal**. O `seller_id` no sales_order é a fonte de verdade — Bill é gerado para o seller inativo.
+
+- Comissão é direito do representante; faz parte do histórico do pedido.
+- UI marca o seller como "inativo" nas listagens, mas o Bill é normal.
+- Sellers `is_active = false` continuam aparecendo em relatórios de comissão.
+
+**Status**: `decided`
 
 ### B5. Seller sem user (representante externo)
 

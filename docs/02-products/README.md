@@ -154,7 +154,7 @@ Nenhuma constraint de DB impõe essas regras — a UI e a camada de serviço sã
 | `sku_code` | string | Único por org. Gerado automaticamente, editável pelo usuário |
 | `ean_gtin` | string | Nullable. Dígito verificador validado |
 | `supplier_ref` | string | Nullable. Código próprio do fornecedor para este item |
-| `cost_price` | decimal | |
+| `cost_price` | decimal | Custo de referência. Editável a qualquer momento e **não influencia `stock_balance.average_cost`** — média ponderada vem exclusivamente dos movimentos `in` (ver [Inventory](../03-inventory/README.md)). Ver [C5](#c5-cost_price-do-sku-é-editável-livremente). |
 | `image_url` | string | Nullable. Sobrescreve a galeria do produto quando preenchido |
 | `weight` | decimal | Em kg. Nullable |
 | `height` | decimal | Em cm. Nullable |
@@ -340,5 +340,18 @@ Regras na emissão/venda:
 ### C1. Unicidade de `product.name` por org
 
 **Decisão**: **sem unique constraint em `name`**. `slug` é o identificador; nome é legível. Dois produtos com o mesmo nome são permitidos.
+
+**Status**: `decided`
+
+### C5. `cost_price` do SKU é editável livremente
+
+**Onde**: faltava regra explícita sobre quando/quem pode editar `sku.cost_price` e se isso afeta o custo médio.
+
+**Decisão**: **edição livre, sem efeito sobre `stock_balance.average_cost`**.
+
+- `cost_price` é um custo de referência (estimativa, custo de tabela do fornecedor).
+- Custo médio só vem de movimentos `in` reais (purchase receipts) — ver [Inventory](../03-inventory/README.md).
+- Edição não gera movimento de estoque nem ajuste de saldo.
+- Sem auditoria de histórico no MVP — edição direta sobrescreve o valor anterior.
 
 **Status**: `decided`

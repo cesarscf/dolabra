@@ -10,11 +10,13 @@ Funcionalidade: Alterar o kit_price_mode de um kit existente
     E a tabela de preço default "Varejo"
     E o kit "Café da Manhã Completo" com componentes já cadastrados
 
-  Cenário: Mudar para "fixed" exige preço do SKU do kit na tabela default
+  Cenário: Mudar para "fixed" sem preço na tabela default é rejeitado
     Dado que o kit está no modo "sum"
     Quando Cesar tenta mudar o modo para "fixed" sem informar o preço do SKU do kit na "Varejo"
     Então a alteração é rejeitada com a mensagem "Informe o preço do kit na tabela de preço default"
 
+  Cenário: Mudar para "fixed" com preço informado na tabela default é aceito
+    Dado que o kit está no modo "sum"
     Quando Cesar muda o modo para "fixed" informando preço R$ 19,90 na "Varejo"
     Então a alteração é aceita
     E o SKU do kit passa a ter preço R$ 19,90 na tabela "Varejo"

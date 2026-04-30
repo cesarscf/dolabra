@@ -56,3 +56,11 @@ Funcionalidade: Atributos globais e SKUs variantes
     Quando Cesar desativa apenas o SKU "Vermelho P"
     Então "Vermelho P" não aparece em novos pedidos
     Mas "Azul P" e "Azul M" continuam selecionáveis
+
+  Cenário: cost_price do SKU pode ser editado livremente
+    Dado o SKU "PAO-UN" com cost_price R$ 0,30 e custo médio (stock_balance.average_cost) R$ 0,34
+    Quando Cesar edita o cost_price de "PAO-UN" para R$ 0,40
+    Então o cost_price registrado fica em R$ 0,40
+    E o custo médio do SKU permanece em R$ 0,34
+    # cost_price é referência; média vem dos movimentos "in"
+    E nenhum movimento de estoque é gerado pela edição

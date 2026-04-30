@@ -56,6 +56,15 @@ Utiliza **Better Auth** com o plugin `organizations`.
 - Roles dentro da org: `owner | admin | member` — extensível via uma futura extensão de permissões.
 - Sessions são escopadas por org: o `organization_id` ativo faz parte do contexto da session e é usado para filtrar todas as queries.
 
+### Operações de membership
+
+Operações suportadas (delegadas ao Better Auth):
+
+- **Convidar** novo usuário com role (owner/admin/member). O convite é aceito pelo destinatário e cria o registro de `member`.
+- **Trocar role** de um membro existente. Apenas `owner`/`admin` podem trocar; `owner` é o único que pode promover outro a `owner`.
+- **Remover** membro (apenas `owner`/`admin`). Não cascateia: pedidos, invoices e bills criados pelo membro permanecem ligados ao `user_id` original — auditoria preservada.
+- **Sair** voluntariamente da organization (qualquer role, exceto o último `owner`). A organization sempre tem ao menos um `owner`.
+
 ## Organization — campos extras
 
 O Better Auth gera a tabela `organization` base. O Dolabra a estende com campos fiscais e operacionais brasileiros via `additionalFields` no plugin `organization()`:
@@ -73,6 +82,7 @@ O Better Auth gera a tabela `organization` base. O Dolabra a estende com campos 
 | `email` | string | E-mail de contato fiscal |
 | `logoUrl` | string | Nullable |
 | `addressId` | string | FK → `address.id`. Nullable |
+| `requiresSalesOrderApproval` | boolean | Liga/desliga a etapa `awaiting_approval` para novos sales_orders. Default `false`. Verificação de credit_limit pode forçar a etapa mesmo quando `false` (ver [Sales Orders → B3](../06-sales-orders/README.md#b3-credit-limit-do-contact-bloqueia-alerta-ou-exige-aprovação)) |
 
 ## Tabela address
 
@@ -133,6 +143,19 @@ Gap-free **não** é exigido no MVP — `invoice.number` é interno do Dolabra. 
 
 Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`B6`, `D6`, …) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
 
+### A7. Setting de aprovação por organization
+
+**Onde**: a feature de credit_limit e o fluxo de status do sales_order assumem "org com etapa de aprovação habilitada/desabilitada", mas o setting não morava em lugar nenhum do schema.
+
+**Decisão**: **coluna direta `requires_sales_order_approval boolean` em `organization`** (default `false`).
+
+- Coluna direta em vez de tabela genérica `organization_setting` — premature abstraction até existirem 3+ settings.
+- Quando `false`, sales_orders saem de `draft` direto para `approved`.
+- Quando `true`, passam por `awaiting_approval` antes de `approved`.
+- Independente do valor, o credit_limit excedido força `awaiting_approval` (ver [Sales Orders → B3](../06-sales-orders/README.md#b3-credit-limit-do-contact-bloqueia-alerta-ou-exige-aprovação)).
+
+**Status**: `decided`
+
 ### B6. Numeração de sales_order, purchase_order, invoice
 
 **Onde**: diversos pontos falavam em "gerado automaticamente, único por org" sem estratégia.
@@ -141,6 +164,20 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 
 - Registros (`sales_order`, `purchase_order`, `invoice`) são criados com `next_value = 1` na criação da organization (ou lazy na primeira geração).
 - **Gap-free não é obrigatório no MVP**: `invoice.number` é o número interno do Dolabra; o número oficial da NF-e vai em `invoice.nf_number` (campo separado). Quando a emissão nativa de NF-e entrar, a numeração fiscal usa sequência própria gap-free.
+- **Numeração de invoice é lazy** — atribuída apenas na transição `draft → issued`. Drafts de invoice descartados não consomem número da sequência. Decisão completa em [Invoices → B9](../07-invoices/README.md#b9-numeração-da-invoice-é-lazy).
+
+**Status**: `decided`
+
+### B18. Operações de membership
+
+**Onde**: convidar membro estava documentado, mas trocar role, remover e sair da org não tinham mecanismo nem cenário.
+
+**Decisão**: **delegar ao Better Auth** — Dolabra não duplica o modelo. Apenas explicita as garantias operacionais:
+
+- Apenas `owner`/`admin` podem trocar role ou remover membros.
+- `owner` é o único que pode promover outro membro a `owner`.
+- A organization **sempre tem ao menos um `owner`** — sair/remover o último `owner` é bloqueado.
+- Remoção/saída **não cascateia** dados: documentos criados pelo membro permanecem ligados ao `user_id` original (auditoria preservada).
 
 **Status**: `decided`
 

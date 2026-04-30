@@ -14,9 +14,13 @@ Funcionalidade: Galeria de imagens do produto
     Então as 3 imagens aparecem na galeria com "position" 1, 2 e 3
 
   Cenário: Reordenar a galeria
-    Dado o produto "Croissant" com imagens nas posições 1, 2, 3
-    Quando Cesar arrasta a imagem da posição 3 para a posição 1
-    Então a ordem fica: a antiga 3ª em 1, a antiga 1ª em 2, a antiga 2ª em 3
+    Dado o produto "Croissant" com imagens "img-A.jpg", "img-B.jpg", "img-C.jpg" nas posições 1, 2, 3
+    Quando Cesar reordena a galeria para a sequência ["img-C.jpg", "img-A.jpg", "img-B.jpg"]
+    Então as posições passam a ser:
+      | URL        | position |
+      | img-C.jpg  | 1        |
+      | img-A.jpg  | 2        |
+      | img-B.jpg  | 3        |
 
   Cenário: SKU sobrescreve imagem da galeria
     Dado o produto "Croissant" com imagem principal "croissant-padrao.jpg"

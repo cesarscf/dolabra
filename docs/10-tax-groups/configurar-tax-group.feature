@@ -46,3 +46,23 @@ Funcionalidade: Configurar um tax_group
     Então o produto aponta apenas tax_group_id (nenhum NCM, CFOP, origem ou unidade fiscal local)
     E a categoria do produto também não carrega campos fiscais
     # A2: tax_group é a única fonte de verdade fiscal
+
+  Cenário: Editar tax_group em uso é sempre permitido
+    Dado o tax_group "Alimento — padaria" associado a 20 produtos
+    E 5 invoices issued usando esse tax_group
+    Quando Cesar edita o ICMS rate do tax_group de 0,00 para 12,00
+    Então a edição é aceita
+    E novas invoices emitidas usam ICMS rate 12,00
+    Mas as 5 invoices issued antigas continuam com o valor congelado no snapshot
+
+  Cenário: Deletar tax_group em uso é bloqueado
+    Dado o tax_group "Alimento — padaria" associado a 3 produtos
+    Quando Cesar tenta deletar o tax_group
+    Então a operação é rejeitada com a mensagem "Tax group em uso por 3 produto(s) — reatribua antes de deletar"
+    E o tax_group permanece intacto
+
+  Cenário: Deletar tax_group sem produtos associados é permitido
+    Dado o tax_group "Antigo — sem uso" sem nenhum produto associado
+    Quando Cesar deleta o tax_group
+    Então o tax_group é removido
+    # invoices antigas que usaram esse tax_group continuam intactas (têm o snapshot próprio)

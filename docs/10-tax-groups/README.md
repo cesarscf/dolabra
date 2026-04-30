@@ -110,9 +110,28 @@ Quando uma invoice é emitida, os seguintes campos são copiados do tax group re
 
 O `cfop` copiado é o resolvido (mesmo estado ou outro estado), não os dois.
 
+## Edição e exclusão
+
+| Operação | Regra |
+|---|---|
+| **Editar** | Sempre permitida. O snapshot na invoice já protege o histórico fiscal — invoices antigas continuam com os valores congelados. Novas invoices passam a usar os valores atualizados. |
+| **Deletar** | **Bloqueada se houver `product` apontando para o tax_group.** Para "aposentar" um tax_group em uso, reatribua os produtos primeiro. Sem soft-delete no MVP — ver [B15](#b15-tax_group-edição-livre-deleção-bloqueada-se-em-uso). |
+
 ## Decisões arquiteturais
 
 Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final.
+
+### B15. tax_group: edição livre, deleção bloqueada se em uso
+
+**Onde**: não estava definido se editar/deletar um tax_group em uso era permitido.
+
+**Decisão**:
+
+- **Editar**: sempre. Snapshot na invoice já protege histórico (decisão A2/D8).
+- **Deletar**: bloqueado se algum `product` aponta para o tax_group. UI lista os produtos afetados para o usuário decidir reatribuir antes.
+- Sem soft-delete (`is_active`) no MVP — a complexidade adicional não se justifica enquanto a deleção dura é simples de bloquear.
+
+**Status**: `decided`
 
 ### B7. DIFAL, FCP, MVA-ST
 

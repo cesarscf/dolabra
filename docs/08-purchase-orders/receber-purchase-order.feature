@@ -43,3 +43,27 @@ Funcionalidade: Recebimento de pedido de compra
     Quando um novo receipt registra qty 10 a unit_cost efetivo R$ 100,00
     Então o custo médio passa a ser R$ 95,00
     # (10 × 90 + 10 × 100) / 20 = 95
+
+  Cenário: Encerrar PO manualmente em partially_received
+    Dado um PO em "partially_received" com FARINHA-25KG received_quantity 10 de 20 e ACUCAR-5KG 30 de 40
+    E o supplier informou que não entregará o restante
+    Quando Cesar (admin) encerra o PO manualmente
+    Então o status do PO vai para "received"
+    E os Bills gerados na confirmação permanecem como estão
+    E nenhum movimento de estoque adicional é gerado
+    E received_quantity dos itens fica nos valores atuais (10 e 30, não os 20 e 40 originais)
+
+  Cenário: Encerramento manual exige permissão
+    Dado um PO em "partially_received" e um usuário com role "member"
+    Quando o usuário tenta encerrar o PO manualmente
+    Então a operação é rejeitada com a mensagem "Apenas owner ou admin podem encerrar PO manualmente"
+
+  Cenário: Encerrar PO em draft ou confirmed (sem receipt) não é encerramento — é cancelamento
+    Dado um PO em "confirmed" sem nenhum receipt
+    Quando Cesar tenta encerrar manualmente
+    Então a operação é rejeitada com a mensagem "Use cancelamento — encerramento manual só vale em partially_received"
+
+  Cenário: Encerrar PO já received é no-op
+    Dado um PO em "received" (todos os itens completos)
+    Quando Cesar tenta encerrar manualmente
+    Então a operação é rejeitada com a mensagem "PO já está em received"

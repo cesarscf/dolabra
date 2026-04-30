@@ -76,3 +76,45 @@ Funcionalidade: Criar uma organization
     E Ana aceita o convite
     Então Ana passa a ser membro da "Padaria do Cesar LTDA" com papel "admin"
     E Ana enxerga os dados da padaria ao atuar nela
+
+  Cenário: Owner troca a role de outro membro
+    Dado a organization com Cesar como "owner" e Ana como "member"
+    Quando Cesar muda a role de Ana para "admin"
+    Então Ana passa a ter papel "admin" na organization
+
+  Cenário: Member comum não pode trocar roles
+    Dado a organization com Cesar como "owner", Ana como "admin" e Bruno como "member"
+    Quando Bruno tenta mudar a role de Ana
+    Então a operação é rejeitada com a mensagem "Apenas owner ou admin podem alterar membros"
+
+  Cenário: Apenas owner pode promover outro a owner
+    Dado a organization com Cesar como "owner" e Ana como "admin"
+    Quando Ana tenta promover Bruno (member) para "owner"
+    Então a operação é rejeitada com a mensagem "Apenas owner pode promover a owner"
+
+    Quando Cesar promove Bruno para "owner"
+    Então Bruno passa a ser "owner"
+
+  Cenário: Remover membro preserva os documentos que ele criou
+    Dado a organization com Cesar como "owner" e Ana como "admin"
+    E Ana criou 5 sales_orders
+    Quando Cesar remove Ana da organization
+    Então Ana deixa de ser membro
+    E os 5 sales_orders permanecem ligados ao user_id de Ana (auditoria preservada)
+    E nenhum sales_order é cancelado em cascata
+
+  Cenário: Membro sai voluntariamente da organization
+    Dado a organization com Cesar como "owner" e Ana como "member"
+    Quando Ana opta por sair da organization
+    Então Ana deixa de ser membro
+    E não enxerga mais os dados da organization
+
+  Cenário: Não é possível sair se for o último owner
+    Dado a organization "Padaria do Cesar LTDA" com Cesar como único "owner"
+    Quando Cesar tenta sair da organization
+    Então a operação é rejeitada com a mensagem "Organization precisa de ao menos um owner"
+
+  Cenário: Não é possível remover o último owner
+    Dado a organization com Cesar como único "owner" e Ana como "admin"
+    Quando Ana tenta remover Cesar
+    Então a operação é rejeitada com a mensagem "Organization precisa de ao menos um owner"

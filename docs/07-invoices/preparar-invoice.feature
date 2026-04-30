@@ -42,12 +42,16 @@ Funcionalidade: Preparar uma invoice em draft
     Então todas as edições são aceitas
     E o draft continua sem efeito colateral
 
+  Cenário: Draft não recebe número da sequência INV
+    Dado uma invoice em "draft"
+    Quando Cesar consulta o número da invoice
+    Então o campo "number" está vazio (numeração é lazy — só atribuída na emissão)
+
   Cenário: Descartar draft
     Dado uma invoice em "draft"
     Quando Cesar descarta o draft
     Então a invoice é removida completamente
-    E nenhum número da sequência INV é "queimado"
-    # a numeração só consome um valor quando a invoice vai para issued (ou pode ser atribuída no draft — decisão fica para o implementador, desde que o usuário veja o número final na emissão)
+    E nenhum número da sequência INV foi consumido
 
   Cenário: Pedido em status inválido não permite preparar
     Dado um pedido em "draft", "awaiting_approval" ou "cancelled"

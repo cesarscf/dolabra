@@ -62,3 +62,24 @@ Funcionalidade: Contas a receber (CAR)
     Quando um usuário tenta criar um CAR direto, sem uma invoice
     Então a operação é rejeitada
     # CARs sempre nascem de invoice emitida
+
+  Cenário: Recebimento em excesso vira extra_amount
+    Dado um CAR "pending" com amount R$ 500,00
+    Quando Cesar registra um car_payment de R$ 520,00 via PIX (cliente pagou juros)
+    Então o paid_amount do CAR fica em R$ 520,00
+    E o extra_amount do CAR fica em R$ 20,00
+    E o status do CAR vai para "paid"
+
+  Cenário: Recebimento parcial seguido de excesso
+    Dado um CAR "pending" com amount R$ 500,00
+    Quando Cesar registra um car_payment de R$ 200,00 (parcial)
+    Então o status passa para "partial" e paid_amount é R$ 200,00
+    Quando Cesar registra um car_payment de R$ 350,00 (cobre o resto + R$ 50 de multa)
+    Então o paid_amount fica em R$ 550,00
+    E o extra_amount fica em R$ 50,00
+    E o status passa para "paid"
+
+  Cenário: Excedente entra no fluxo de caixa realizado
+    Dado um CAR pago com paid_amount R$ 520,00 (amount R$ 500,00, extra R$ 20,00)
+    Quando Cesar consulta o fluxo realizado do dia do pagamento
+    Então a entrada do dia é R$ 520,00 (não R$ 500,00)

@@ -56,3 +56,35 @@ Funcionalidade: Regras de comissão do seller
     Quando o CAR transita para "paid" e a comissão é calculada
     Então o cálculo e a geração do Bill acontecem no módulo Financial
     E o módulo Sellers apenas fornece as regras consultadas
+
+  Cenário: Override em categoria pai não vale para produtos em categoria filha
+    Dado a árvore de categorias "Padaria → Pães → Pães Doces"
+    E o override do seller "Ana" para a categoria "Padaria" em 10%
+    E nenhum override para "Pães" nem para "Pães Doces"
+    Quando o sistema pergunta a taxa para um produto em "Pães Doces"
+    Então a taxa retornada é 5% (default do seller)
+    # match estrito: só conta se a categoria exata do produto tem override
+
+  Cenário: Override em categoria filha não afeta produto em categoria pai
+    Dado o override do seller "Ana" para "Pães Doces" em 12%
+    E nenhum override para "Padaria"
+    Quando o sistema pergunta a taxa para um produto na categoria "Padaria"
+    Então a taxa retornada é 5% (default)
+
+  Cenário: Para cobrir uma sub-árvore, cadastre overrides explícitos em cada categoria
+    Dado a árvore "Padaria → Pães → Pães Doces"
+    E o seller "Ana" com overrides:
+      | Categoria   | Comissão (%) |
+      | Padaria     | 6,00         |
+      | Pães        | 6,00         |
+      | Pães Doces  | 6,00         |
+    Quando o sistema pergunta a taxa para um produto em qualquer uma das três categorias
+    Então a taxa retornada é 6%
+
+  Cenário: Seller desativado mantém comissão sobre pedidos existentes
+    Dado o seller "Rafael" atribuído a um sales_order com invoice já emitida
+    Quando Cesar desativa o seller "Rafael"
+    E um CAR dessa invoice transita para "paid"
+    Então um Bill de comissão é gerado normalmente para "Rafael"
+    E o Bill aparece no relatório de comissões
+    Mas "Rafael" não aparece em formulários de novos pedidos

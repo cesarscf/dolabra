@@ -72,8 +72,12 @@ draft → confirmed → partially_received → received → cancelled
 | `draft` | Em construção. Totalmente editável. Sem efeitos financeiros ou de estoque. |
 | `confirmed` | Enviado ao supplier. Bill (contas a pagar) gerado. Read-only. |
 | `partially_received` | Ao menos um recebimento registrado. Estoque incrementado dos itens recebidos. |
-| `received` | Todos os itens totalmente recebidos. |
+| `received` | Todos os itens totalmente recebidos **ou** PO encerrada manualmente (ver [B17](#b17-encerrar-po-manualmente-quando-supplier-não-vai-completar)). |
 | `cancelled` | Anulado. Só permitido antes de qualquer recebimento. Bill é cancelado. Imutável. |
+
+### Encerramento manual
+
+Quando o supplier não vai entregar o saldo restante (faltou produto, contrato cancelado parcialmente etc.), o usuário pode **encerrar manualmente** o PO em `partially_received`. O status vai para `received` mesmo com `received_quantity < quantity` em alguns itens. Bills permanecem como estão (já foram gerados na confirmação) — eventual desconto é tratado por nota de débito/crédito manual no Financial. Despesas acessórias não rateadas ficam no limbo (já documentado em [A6](#a6-rateio-de-despesas-acessórias-com-recebimentos-parciais)).
 
 ## Purchase order
 
@@ -90,7 +94,8 @@ draft → confirmed → partially_received → received → cancelled
 | `accessory_expenses_total` | decimal | Soma dos valores de todas as despesas acessórias |
 | `total` | decimal | `subtotal + accessory_expenses_total` |
 | `confirmed_at` | timestamp | Nullable. Preenchido na transição para `confirmed` — usado como base para cálculo dos `due_date` dos Bills gerados |
-| `notes` | text | Nullable |
+| `closed_at` | timestamp | Nullable. Preenchido na transição para `received`, seja por completar todos os itens ou por encerramento manual (ver [B17](#b17-encerrar-po-manualmente-quando-supplier-não-vai-completar)) |
+| `notes` | text | Nullable. Usado também para registrar o motivo do encerramento manual quando aplicável |
 | `created_at` | timestamp | |
 | `updated_at` | timestamp | |
 
@@ -195,6 +200,19 @@ Recebimento parcial é suportado. Cada receipt registra o que realmente chegou.
 ## Decisões arquiteturais
 
 Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A6`, `D5`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### B17. Encerrar PO manualmente quando supplier não vai completar
+
+**Onde**: PO em `partially_received` ficaria preso indefinidamente se o supplier não fosse entregar o saldo. Antes da decisão, a única saída era ignorar o PO (poluindo relatórios) ou criar receipts fictícios.
+
+**Decisão**: **botão "encerrar PO"** disponível no status `partially_received`. Status vai para `received`.
+
+- Bills já gerados na confirmação **permanecem como estão**. Ajustes (devolução de pagamento, desconto pós-fatura) ficam para o usuário fazer manualmente em Bill de ajuste.
+- Despesas acessórias parcialmente rateadas — limbo aceito (mesma decisão de A6).
+- Encerramento manual preenche `purchase_order.closed_at`; o motivo entra em `notes`.
+- Ação reservada a `owner`/`admin`.
+
+**Status**: `decided`
 
 ### A6. Rateio de despesas acessórias com recebimentos parciais
 

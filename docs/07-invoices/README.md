@@ -59,8 +59,8 @@
     1 Sales Order ──► Invoice A (itens 1-3) ──► issued
                  └──► Invoice B (item 4)    ──► issued
     O pedido acompanha a quantidade acumulada já faturada por item.
-    Status do pedido → delivered quando todos os itens estão
-    totalmente faturados + entregues.
+    O pedido permanece em "invoiced" — estado terminal do MVP
+    (registro de entrega física fica fora do escopo).
 ```
 
 Uma invoice representa o registro formal de uma venda. É sempre gerada a partir de um sales order (total ou parcial) e dispara a saída de estoque e a criação de contas a receber.
@@ -88,7 +88,7 @@ Uma invoice representa o registro formal de uma venda. É sempre gerada a partir
 |---|---|---|
 | `id` | uuid | |
 | `organization_id` | uuid | Chave de tenancy |
-| `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). Não é o número da NF-e (que vai em `nf_number`) |
+| `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). **Atribuído lazy** apenas na transição `draft → issued` (ver [B9](#b9-numeração-da-invoice-é-lazy)). Nullable em `draft`. Não é o número da NF-e (que vai em `nf_number`) |
 | `sales_order_id` | uuid | FK → `sales_order` |
 | `status` | enum | `draft \| issued \| cancelled` |
 | `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão: `tax_id`, `legal_name`, `state_registration`, endereço |
@@ -133,10 +133,17 @@ Cada item carrega um snapshot fiscal completo copiado do `tax_group` do produto 
 
 ## O que acontece quando uma invoice é emitida
 
-1. **Saída de estoque** — um stock movement de `out` é gerado por SKU com `reference_type = sales_invoice`.
-2. **CAR gerado** — uma entrada de CAR por `payment_term_installment` do `payment_term_id` do pedido. Detalhes do cálculo de `due_date` e `amount` em [Financial](../09-financial/README.md).
-3. **Snapshot fiscal** — todos os campos fiscais copiados do `tax_group` para cada `invoice_item`.
-4. **Snapshot do customer** — dados fiscais atuais do customer copiados para `customer_snapshot` (jsonb) na invoice.
+A emissão é uma **operação atômica** — todos os passos abaixo acontecem na mesma transação. Se qualquer um falhar (validação ou DB), nada é persistido.
+
+1. **Validação prévia**:
+   - Saldo de estoque suficiente para cada SKU (ver [B16](#b16-emissão-bloqueia-se-gerar-estoque-negativo)). Se algum item ficar com `stock_balance.quantity - qty_emitida < 0`, a emissão é rejeitada.
+   - Customer com endereço `billing` cadastrado.
+   - Soma de qty (issued + drafts) não excede a qty do sales_order_item (ver [B10](../06-sales-orders/README.md#b10-múltiplos-drafts-simultâneos-controle-de-qty-comprometida)).
+2. **Numeração** — atribui o próximo `INV-NNNNNN` da sequência da org (ver [B9](#b9-numeração-da-invoice-é-lazy)).
+3. **Saída de estoque** — um stock movement de `out` é gerado por SKU com `reference_type = sales_invoice`.
+4. **CAR gerado** — uma entrada de CAR por `payment_term_installment` do `payment_term_id` do pedido. Detalhes do cálculo de `due_date` e `amount` em [Financial](../09-financial/README.md).
+5. **Snapshot fiscal** — todos os campos fiscais copiados do `tax_group` para cada `invoice_item`.
+6. **Snapshot do customer** — dados fiscais atuais do customer copiados para `customer_snapshot` (jsonb) na invoice.
 
 ## O que acontece quando uma invoice é cancelada
 
@@ -161,6 +168,32 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 - Tipos preservam semântica: `in` = compra (atualiza custo médio), `out` = venda, `adjustment_in/out` = tudo o mais.
 - O movimento de reversão usa `type = adjustment_in`, `reference_type = invoice_cancellation`, `reference_id` apontando para a invoice cancelada.
 - `unit_cost` do movimento de reversão bate com o `unit_cost` do movimento `out` original — zera impacto histórico. Custo médio **não** é recalculado.
+
+**Status**: `decided`
+
+### B9. Numeração da invoice é lazy
+
+**Onde**: Foundation B6 define `document_sequence` com incremento atômico que sempre avança. A feature `preparar-invoice` dizia que descartar draft "não queima número", o que era contraditório.
+
+**Decisão**: **`invoice.number` é atribuído apenas na transição `draft → issued`**.
+
+- `invoice.number` é nullable enquanto a invoice está em `draft`.
+- Drafts descartados não consomem da sequência `INV`.
+- O incremento atômico de `document_sequence` é executado dentro da transação de emissão, junto com os demais efeitos colaterais.
+- Drafts podem ser identificados por `id` (UUID) ou um label não-fiscal (ex.: "Draft de INV para SO-000042") na UI; o número fiscal só aparece após a emissão.
+
+**Status**: `decided`
+
+### B16. Emissão bloqueia se gerar estoque negativo
+
+**Onde**: o fluxo de emissão gerava um movimento `out` sem checar saldo, podendo resultar em `stock_balance.quantity < 0` — sintoma de erro operacional que se propaga para custo médio, comissão e fluxo de caixa.
+
+**Decisão**: **bloquear a emissão** se algum item resultaria em saldo negativo.
+
+- Validação roda na transação de emissão, antes de gerar o movimento `out`.
+- Mensagem de erro identifica o(s) SKU(s) com saldo insuficiente e a qty disponível.
+- Para liberar a emissão, o usuário precisa: registrar receipts pendentes, ajustar inventário (contagem ou ajuste manual), ou reduzir qty da invoice.
+- Reserva de estoque em `approved` continua deferida (ver [C3](#c3-reserva-de-estoque-em-sales_order-aprovado)) — a checagem acontece no momento crítico (emissão), não no aprovado.
 
 **Status**: `decided`
 

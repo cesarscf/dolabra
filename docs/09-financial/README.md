@@ -99,7 +99,8 @@ Geradas automaticamente quando uma sales invoice é emitida. Nunca criadas manua
 | `installment_total` | integer | Quantidade total de parcelas desta invoice |
 | `due_date` | date | |
 | `amount` | decimal | |
-| `paid_amount` | decimal | Valor acumulado recebido. Default `0` |
+| `paid_amount` | decimal | Valor acumulado recebido. Default `0`. Pode ser maior que `amount` em caso de juros/multa — o excedente vai para `extra_amount` (ver [A8](#a8-car-aceita-recebimento-em-excesso-jurosmulta)) |
+| `extra_amount` | decimal | Default `0`. Recebido além do `amount` (juros, multa, correção). Não influencia o status — o CAR vira `paid` quando `paid_amount >= amount` |
 | `status` | enum | `pending \| partial \| paid \| cancelled`. "Overdue" **não** é um status — é derivado em runtime: `status IN (pending, partial) AND due_date < current_date` |
 | `category_id` | uuid | FK → `financial_category`. Nullable |
 | `notes` | text | Nullable |
@@ -108,7 +109,7 @@ Geradas automaticamente quando uma sales invoice é emitida. Nunca criadas manua
 
 ### Pagamentos do CAR
 
-Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos até que `paid_amount = amount`.
+Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos. O CAR fica `paid` quando `paid_amount >= amount`; pagamentos adicionais (juros/multa) somam ao `paid_amount` e o excedente vai para `extra_amount`.
 
 **`car_payment`**
 
@@ -123,7 +124,7 @@ Cada evento de pagamento é registrado. Múltiplos pagamentos permitidos até qu
 
 Transições de status:
 - Primeiro pagamento com `paid_amount < amount` → `partial`
-- Pagamento que leva a `paid_amount = amount` → `paid`
+- Pagamento que leva a `paid_amount >= amount` → `paid` (excedente vai para `extra_amount`)
 - Invoice cancelada → `cancelled`
 
 "Overdue" não é uma transição — é uma condição derivada em queries/UI: `status IN (pending, partial) AND due_date < current_date`. Não há job agendado no MVP.
@@ -148,7 +149,8 @@ Bills são criados de duas formas:
 | `installment_total` | integer | |
 | `due_date` | date | |
 | `amount` | decimal | |
-| `paid_amount` | decimal | Default `0` |
+| `paid_amount` | decimal | Default `0`. Pode ultrapassar `amount` em caso de juros/multa pagos ao fornecedor — excedente vai para `extra_amount` (mesma regra do CAR, ver [A8](#a8-car-aceita-recebimento-em-excesso-jurosmulta)) |
+| `extra_amount` | decimal | Default `0`. Pago além do `amount` (juros, multa, correção). Não influencia o status — o Bill vira `paid` quando `paid_amount >= amount` |
 | `status` | enum | `pending \| partial \| paid \| cancelled`. "Overdue" é derivado em runtime (mesma regra do CAR) |
 | `category_id` | uuid | FK → `financial_category`. Nullable |
 | `description` | string | Obrigatório para bills manuais |
@@ -249,7 +251,7 @@ Passos (executados quando um CAR → `paid`):
 4. Soma a comissão entre todos os itens → `comissão_total_da_invoice`.
 5. Calcula o valor proporcional deste CAR:
    `bill_amount = (car.amount / invoice.total) × comissão_total_da_invoice`.
-6. Gera um Bill com `origin = commission`, `seller_id = seller.id` (supplier_id fica null), `amount = bill_amount`, vencimento conforme configuração da org (default: imediato).
+6. Gera um Bill com `origin = commission`, `seller_id = seller.id` (supplier_id fica null), `amount = bill_amount`, **`due_date = current_date` (vencimento imediato)** no MVP — ver [B14](#b14-bill-de-comissão-vence-imediato-no-mvp).
 
 Os Bills de comissão são bills normais e seguem o mesmo fluxo de pagamento.
 
@@ -275,6 +277,20 @@ O fluxo de caixa é sempre escopado pela organization e pode ser filtrado por in
 ## Decisões arquiteturais
 
 Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A5`, `B1`, `B2`, `B4`, `D4`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### A8. CAR aceita recebimento em excesso (juros/multa)
+
+**Onde**: cobranças vencidas costumam vir com juros/multa, e às vezes o cliente paga "a mais". Forçar `paid_amount = amount` exigia lançamento manual paralelo no Financial.
+
+**Decisão**: **adicionar `extra_amount decimal default 0` em `car`**. O campo `paid_amount` pode ultrapassar `amount`; o excedente é registrado em `extra_amount`.
+
+- Estado `paid` é alcançado quando `paid_amount >= amount` (não exige igualdade).
+- `extra_amount = max(0, paid_amount - amount)` — calculado no insert/update do `car_payment`.
+- Mesma regra vale para `bill.extra_amount` (juros pagos a fornecedor).
+- Reflexo no fluxo de caixa realizado: total recebido inclui `extra_amount` (é dinheiro que entrou).
+- Comissão **não** é recalculada em cima do extra — segue baseada em `car.amount` original.
+
+**Status**: `decided`
 
 ### A5. `payment_terms` como string livre vs. estrutura
 
@@ -315,6 +331,17 @@ Esta seção registra **o porquê** por trás das escolhas que travam o schema/c
 - **Se a invoice for cancelada**: Bills já gerados para CARs pagos permanecem (dinheiro entrou, comissão é devida). Os CARs `pending/partial` remanescentes viram `cancelled` (ver A4 em Invoices) e não geram novo Bill de comissão.
 - **Se um CAR for cancelado** sem cancelar a invoice (renegociação): o Bill de comissão já gerado para esse CAR fica como está — o evento exige intervenção manual do admin (gerar Bill de ajuste) caso seja necessário reverter.
 - Reversão automática de comissão fica fora do MVP; o admin pode criar Bill manual negativo/ajuste se precisar.
+
+**Status**: `decided`
+
+### B14. Bill de comissão vence imediato no MVP
+
+**Onde**: o texto antigo dizia "vencimento conforme configuração da org (default: imediato)" mas o setting não existia.
+
+**Decisão**: **hardcoded `due_date = current_date`** (vencimento imediato) por enquanto.
+
+- YAGNI — vira setting da organization na primeira solicitação real (`commission_bill_due_offset_days int`).
+- Sellers podem ser pagos no mesmo dia ou no fechamento mensal — depende do operacional do escritório, não do schema.
 
 **Status**: `decided`
 
