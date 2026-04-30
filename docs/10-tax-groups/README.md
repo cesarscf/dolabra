@@ -109,3 +109,13 @@ Quando uma invoice é emitida, os seguintes campos são copiados do tax group re
 `ncm`, `cest`, `cfop`, `origin`, `icms_cst`, `icms_rate`, `pis_cst`, `pis_rate`, `cofins_cst`, `cofins_rate`, `ipi_cst`, `ipi_rate`
 
 O `cfop` copiado é o resolvido (mesmo estado ou outro estado), não os dois.
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final.
+
+### B7. DIFAL, FCP, MVA-ST
+
+**Onde**: o módulo cobre ICMS/PIS/COFINS/IPI/ICMS-ST rate, mas não DIFAL (diferencial de alíquota), FCP (fundo de combate à pobreza), MVA/IVA (base de cálculo ST).
+
+**Status**: `deferred` — pós-MVP junto com emissão de NF-e. O schema do `tax_group` deve permitir evolução sem migration destrutiva.

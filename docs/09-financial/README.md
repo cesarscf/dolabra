@@ -198,9 +198,9 @@ Uma linha por parcela dentro do template. A soma dos `pct` dentro de um template
 
 ### Uso
 
-- `contact.default_payment_term_id` — condição default pré-preenchida ao criar um sales_order para esse customer (ver `04-contacts.md`).
-- `sales_order.payment_term_id` — condição aplicada ao pedido (ver `06-sales-orders.md`). Editável no momento do pedido.
-- `purchase_order.payment_term_id` — condição negociada com o supplier (ver `08-purchase-orders.md`). Usada para gerar Bills na confirmação da PO.
+- `contact.default_payment_term_id` — condição default pré-preenchida ao criar um sales_order para esse customer (ver [Contacts](../04-contacts/README.md)).
+- `sales_order.payment_term_id` — condição aplicada ao pedido (ver [Sales Orders](../06-sales-orders/README.md)). Editável no momento do pedido.
+- `purchase_order.payment_term_id` — condição negociada com o supplier (ver [Purchase Orders](../08-purchase-orders/README.md)). Usada para gerar Bills na confirmação da PO.
 
 ### Geração de CARs na emissão da invoice
 
@@ -271,3 +271,76 @@ Derivado dos registros de CAR e Bill. Sem tabela separada — calculado em tempo
 | **Projetado** | CARs e Bills com status `pending`/`partial` agrupados por `due_date` (vencidos aparecem como subcategoria via derivação em runtime) |
 
 O fluxo de caixa é sempre escopado pela organization e pode ser filtrado por intervalo de data e financial category.
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A5`, `B1`, `B2`, `B4`, `D4`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### A5. `payment_terms` como string livre vs. estrutura
+
+**Onde**: `payment_terms` aparecia como texto livre em `contact` e `sales_order`, mas a geração de CAR exigia decompor "30/60/90" em parcelas com valores e vencimentos. Texto livre não basta sem parser.
+
+**Decisão**: **templates `payment_term` reutilizáveis**.
+
+- Nova tabela `payment_term` (org-scoped): `id`, `organization_id`, `name`, `is_default`.
+- Nova tabela filha `payment_term_installment`: `id`, `payment_term_id`, `sequence`, `days_offset`, `pct`. Soma dos `pct` por payment_term = 100.
+- Em `contact`: removido `payment_terms` (string livre); adicionado `default_payment_term_id` (FK, nullable).
+- Em `sales_order`: removido `payment_terms` (string livre); adicionado `payment_term_id` (FK, obrigatório). Pré-preenchido pelo default do contact, editável.
+- Geração de CARs na emissão da invoice: percorre `payment_term_installment` do pedido, cria 1 CAR por linha com `due_date = invoice.issued_at + days_offset` e `amount = invoice.total × pct / 100`.
+
+**Status**: `decided`
+
+### B1. `commission_base`: o que é "net"?
+
+**Onde**: a documentação dizia "gross = antes de descontos, net = após descontos" sem explicitar quais descontos.
+
+**Decisão**: **net inclui o rateio do desconto do pedido; impostos não são descontados no MVP**.
+
+- `gross` = `sales_order_item.total` (pós-desconto de item, pré-rateio do desconto do pedido).
+- `net` = `sales_order_item.total × (1 - sales_order.discount_total / sales_order.subtotal)`.
+- Ex-impostos fica para pós-MVP (depende de emissão de NF-e e destaque correto de ICMS/PIS/COFINS) — pode entrar no futuro como um novo valor de `commission_base`, ex.: `fiscal_net`.
+
+**Status**: `decided`
+
+### B2. Comissão: por CAR paid ou por invoice totalmente paga?
+
+**Onde**: uma invoice de 3 parcelas vira 3 CARs. Faltava decidir se a comissão saía por parcela ou só ao quitar a invoice.
+
+**Decisão**: **por CAR paid, com regra clara de imutabilidade em cancelamentos**.
+
+- Cada CAR → `paid` dispara geração de 1 Bill com `origin = commission`:
+  - `amount = (car.amount / invoice.total) × comissão_total_da_invoice`
+  - Supplier = seller (pagamento da comissão)
+- **Bills de comissão gerados são imutáveis.**
+- **Se a invoice for cancelada**: Bills já gerados para CARs pagos permanecem (dinheiro entrou, comissão é devida). Os CARs `pending/partial` remanescentes viram `cancelled` (ver A4 em Invoices) e não geram novo Bill de comissão.
+- **Se um CAR for cancelado** sem cancelar a invoice (renegociação): o Bill de comissão já gerado para esse CAR fica como está — o evento exige intervenção manual do admin (gerar Bill de ajuste) caso seja necessário reverter.
+- Reversão automática de comissão fica fora do MVP; o admin pode criar Bill manual negativo/ajuste se precisar.
+
+**Status**: `decided`
+
+### B4. `overdue`: na leitura ou em job?
+
+**Decisão**: **derivado em runtime, nunca persistido**.
+
+- `car.status` e `bill.status` são `pending | partial | paid | cancelled` (sem `overdue`).
+- "Overdue" é uma condição derivada: `status IN (pending, partial) AND due_date < current_date`.
+- Sem job scheduler no MVP. Notificações de vencido ficam para quando houver necessidade — e podem ser um job separado, sem mexer no `status`.
+- UI mostra "overdue" como categoria visual, backing pela condição derivada.
+
+**Status**: `decided`
+
+### D4. Comissão quando o produto não tem categoria
+
+**Onde**: `product.category_id` é nullable; `seller_category_commission` exige `category_id`.
+
+**Decisão**: **produto sem categoria sempre usa `seller.default_commission_pct`**. Sem fallback adicional, sem obrigar categoria.
+
+- Se a empresa quiser "só pagar comissão via categoria", basta setar `default_commission_pct = 0`.
+- Não há "catch-all" de override para produtos sem categoria — mantém o modelo enxuto.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **B5** — Seller sem user → `bill.supplier_id` nullable + `bill.seller_id` para Bills de comissão. Decisão completa em [Sellers → B5](../05-sellers/README.md#b5-seller-sem-user-representante-externo).
+- **D5** — `due_date` dos Bills gerados na confirmação da PO segue o `payment_term` do PO. Decisão completa em [Purchase Orders → D5](../08-purchase-orders/README.md#d5-due_date-do-bill-gerado-na-confirmação-da-po).

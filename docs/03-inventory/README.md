@@ -133,4 +133,52 @@ Constraint: partial unique index em `(organization_id)` onde `status = 'in_progr
 | `counted_quantity` | decimal | Contagem física real informada pelo usuário |
 | `difference` | decimal | `counted - system`. Calculado |
 
-Ao fechar a contagem, é gerado automaticamente um movimento de `adjustment` para cada item onde `difference ≠ 0`.
+Ao fechar a contagem, é gerado automaticamente um movimento de `adjustment_in` ou `adjustment_out` para cada item onde `difference ≠ 0`, conforme o sinal (ver D1 abaixo).
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`D1`, `D7`, `D9`, `C2`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### D1. Direção do movimento `adjustment`
+
+**Onde**: o módulo dizia que `quantity` é sempre positiva e que a direção vinha de `type`. Funcionava para `in` (+) e `out` (−), mas `adjustment` podia ir para os dois lados (contagem pra mais/menos, cancelamento de invoice, correções manuais).
+
+**Decisão**: **dois subtipos de adjustment**. `type` vira `in | out | adjustment_in | adjustment_out`.
+
+- Mantém a invariante "quantity sempre positiva; direção pelo type".
+- `adjustment_in`: invoice_cancellation, contagem onde `counted > system`, correção manual pra mais.
+- `adjustment_out`: contagem onde `counted < system`, correção manual pra menos.
+- Nenhum dos dois atualiza custo médio.
+
+**Status**: `decided`
+
+### D7. Unique em `stock_balance(sku_id)`
+
+**Onde**: o módulo dizia "um registro por SKU" mas o schema não declarava unique constraint.
+
+**Decisão**: **unique `(organization_id, sku_id)` em `stock_balance`**. DB garante a invariante; sem constraint, race conditions em upsert podem criar duplicatas.
+
+**Status**: `decided`
+
+### D9. Inventory counts concorrentes
+
+**Onde**: `inventory_count` tinha status `draft | in_progress | completed` mas não dizia se múltiplos counts podiam estar em progresso simultaneamente.
+
+**Decisão**: **um count por vez por org**. Enquanto houver count em `in_progress`, não pode abrir outro.
+
+- Constraint: partial unique index em `inventory_count (organization_id)` onde `status = 'in_progress'`.
+- Counts paralelos por escopo (categoria/filial) ficam para pós-MVP, junto com multi-filial.
+
+**Status**: `decided`
+
+### C2. `inventory_count_item` sem `organization_id`
+
+**Onde**: `inventory_count_item` herdava tenancy via `inventory_count_id`, exigindo join para qualquer query — inconsistente com a invariante de "toda tabela de domínio tem `organization_id`".
+
+**Decisão**: **denormalizar `organization_id` em `inventory_count_item`**. Consistente com o princípio do módulo Foundation e facilita RLS/queries.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **A4** — Reversão de estoque no cancelamento de invoice usa `adjustment_in` com `reference_type = invoice_cancellation`. Decisão completa em [Invoices → A4](../07-invoices/README.md#a4-reversão-de-estoque-no-cancelamento-de-invoice).

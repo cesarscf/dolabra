@@ -88,7 +88,7 @@ Uma invoice representa o registro formal de uma venda. É sempre gerada a partir
 |---|---|---|
 | `id` | uuid | |
 | `organization_id` | uuid | Chave de tenancy |
-| `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver `01-foundation.md`. Não é o número da NF-e (que vai em `nf_number`) |
+| `number` | string | Número legível interno (ex.: `INV-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md). Não é o número da NF-e (que vai em `nf_number`) |
 | `sales_order_id` | uuid | FK → `sales_order` |
 | `status` | enum | `draft \| issued \| cancelled` |
 | `customer_snapshot` | jsonb | Dados fiscais do customer no momento da emissão: cnpj/cpf, legal_name, state_registration, endereço |
@@ -134,7 +134,7 @@ Cada item carrega um snapshot fiscal completo copiado do `tax_group` do produto 
 ## O que acontece quando uma invoice é emitida
 
 1. **Saída de estoque** — um stock movement de `out` é gerado por SKU com `reference_type = sales_invoice`.
-2. **CAR gerado** — uma entrada de CAR por `payment_term_installment` do `payment_term_id` do pedido. Detalhes do cálculo de `due_date` e `amount` em `09-financial.md`.
+2. **CAR gerado** — uma entrada de CAR por `payment_term_installment` do `payment_term_id` do pedido. Detalhes do cálculo de `due_date` e `amount` em [Financial](../09-financial/README.md).
 3. **Snapshot fiscal** — todos os campos fiscais copiados do `tax_group` para cada `invoice_item`.
 4. **Snapshot do customer** — dados fiscais atuais do customer copiados para `customer_snapshot` (jsonb) na invoice.
 
@@ -147,3 +147,43 @@ Cada item carrega um snapshot fiscal completo copiado do `tax_group` do produto 
 ## Faturamento parcial
 
 Um sales order pode ser faturado em vários lotes. Cada invoice cobre um subconjunto dos itens do pedido ou quantidades parciais. O sales order acompanha as quantidades acumuladas por item para saber quando está concluído.
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A4`, `D8`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### A4. Reversão de estoque no cancelamento de invoice
+
+**Onde**: o texto antigo dizia "um movimento de **ajuste do tipo `in`**", mas o módulo Inventory listava os tipos como `in | out | adjustment` e reservava `in` para purchase receipt. Texto ambíguo: tipo `in` poluiria o histórico de entradas; tipo `adjustment` contrariava a literalidade.
+
+**Decisão**: **`adjustment_in` com `reference_type = invoice_cancellation`** (apoia-se em D1 do Inventory).
+
+- Tipos preservam semântica: `in` = compra (atualiza custo médio), `out` = venda, `adjustment_in/out` = tudo o mais.
+- O movimento de reversão usa `type = adjustment_in`, `reference_type = invoice_cancellation`, `reference_id` apontando para a invoice cancelada.
+- `unit_cost` do movimento de reversão bate com o `unit_cost` do movimento `out` original — zera impacto histórico. Custo médio **não** é recalculado.
+
+**Status**: `decided`
+
+### D8. Invoice `draft` — ciclo de vida
+
+**Onde**: os status estavam definidos mas faltava explicitar quem cria o draft, se é editável, e quando os snapshots acontecem.
+
+**Decisão**: **draft editável com cópia de dados do sales_order**.
+
+Regras:
+
+- Usuário dispara "preparar invoice" a partir de um sales_order (em `approved` ou `picking`). Sistema cria invoice em `draft` copiando itens, quantidades e `unit_price` do sales_order.
+- **Faturamento parcial**: o usuário escolhe quais itens/quantidades entram neste draft. Múltiplos drafts coexistem por sales_order.
+- Draft é **editável**: quantidades, preços e notas podem ser ajustados antes de emitir.
+- Draft **não gera** stock_movement, CAR ou snapshot fiscal.
+- `issued_at` é preenchido apenas na transição `draft → issued`.
+- Snapshot fiscal (`ncm`/`cst`/rates do `tax_group`) e `customer_snapshot` são copiados **no momento da emissão** (`draft → issued`), não antes.
+- Draft pode ser descartado — deleção livre enquanto em `draft`.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **A5** — `payment_terms` estruturado via templates (afeta a geração de CARs ao emitir a invoice). Decisão completa em [Financial → A5](../09-financial/README.md#a5-payment_terms-como-string-livre-vs-estrutura).
+- **B6** — Numeração de `invoice` e separação de `invoice.nf_number` para a numeração fiscal pós-MVP. Decisão completa em [Foundation → B6](../01-foundation/README.md#b6-numeração-de-sales_order-purchase_order-invoice).
+- **D1** — Direção do movimento `adjustment` (subtipos `adjustment_in`/`adjustment_out`). Decisão completa em [Inventory → D1](../03-inventory/README.md#d1-direção-do-movimento-adjustment).

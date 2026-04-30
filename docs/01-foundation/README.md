@@ -127,3 +127,30 @@ Gap-free **não** é exigido no MVP — `invoice.number` é interno do Dolabra. 
 
 - Permissões granulares (além de `owner | admin | member`) — via uma extensão de roles/permissions
 - Suporte a multi-filial (várias localidades físicas por org) — via extensão; o schema não deve impedir isso
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`B6`, `D6`, …) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### B6. Numeração de sales_order, purchase_order, invoice
+
+**Onde**: diversos pontos falavam em "gerado automaticamente, único por org" sem estratégia.
+
+**Decisão**: tabela `document_sequence` por `(organization_id, entity_type)` com incremento atômico — definição completa na seção *Numeração de documentos* acima.
+
+- Registros (`sales_order`, `purchase_order`, `invoice`) são criados com `next_value = 1` na criação da organization (ou lazy na primeira geração).
+- **Gap-free não é obrigatório no MVP**: `invoice.number` é o número interno do Dolabra; o número oficial da NF-e vai em `invoice.nf_number` (campo separado). Quando a emissão nativa de NF-e entrar, a numeração fiscal usa sequência própria gap-free.
+
+**Status**: `decided`
+
+### D6. `address.organization_id`
+
+**Onde**: a tabela `address` tinha sido definida sem `organization_id`, violando a invariante de tenancy declarada neste módulo.
+
+**Decisão**: `address` carrega `organization_id`. Toda tabela de domínio tem tenancy direta, sem exceção.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **A1** — Address: tabela compartilhada vs. por entidade (afeta a tabela `address` deste módulo). Decisão completa em [Contacts → A1](../04-contacts/README.md#a1-address-tabela-compartilhada-vs-por-entidade).

@@ -81,11 +81,11 @@ draft → confirmed → partially_received → received → cancelled
 |---|---|---|
 | `id` | uuid | |
 | `organization_id` | uuid | Chave de tenancy |
-| `number` | string | Número legível do pedido (ex.: `PO-000001`). Gerado via `document_sequence` — ver `01-foundation.md` |
+| `number` | string | Número legível do pedido (ex.: `PO-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md) |
 | `status` | enum | Ver fluxo de status acima |
 | `supplier_id` | uuid | FK → `contact` (type precisa incluir `supplier`) |
 | `expected_date` | date | Data esperada de entrega. Nullable |
-| `payment_term_id` | uuid | FK → `payment_term` (ver `09-financial.md`). Condição de pagamento ao fornecedor. Obrigatório |
+| `payment_term_id` | uuid | FK → `payment_term` (ver [Financial](../09-financial/README.md)). Condição de pagamento ao fornecedor. Obrigatório |
 | `subtotal` | decimal | Soma dos totais dos itens |
 | `accessory_expenses_total` | decimal | Soma dos valores de todas as despesas acessórias |
 | `total` | decimal | `subtotal + accessory_expenses_total` |
@@ -191,3 +191,57 @@ Recebimento parcial é suportado. Cada receipt registra o que realmente chegou.
 - Só é permitido quando o status é `draft` ou `confirmed` (sem nenhum recebimento).
 - No cancelamento: o Bill associado é cancelado.
 - Assim que existir qualquer receipt, o pedido não pode mais ser cancelado — é necessário um processo de devolução (pós-MVP).
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A6`, `D5`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### A6. Rateio de despesas acessórias com recebimentos parciais
+
+**Onde**: o rateio entrava no `unit_cost` do receipt, mas o primeiro receipt não sabia se haveria mais. Ratear tudo no primeiro distorce o custo médio; ratear proporcionalmente a cada receipt exigia re-rateio retroativo quando o próximo chegava.
+
+**Decisão**: **rateio proporcional por receipt, à fração recebida**.
+
+Para cada item em cada receipt:
+
+```
+qty_this_receipt = purchase_receipt_item.quantity
+qty_expected_total = purchase_order_item.quantity
+
+Para cada purchase_order_expense:
+  base_de_rateio conforme apportionment:
+    proportional → (item.subtotal / sum(items.subtotal))
+    equal        → 1 / count(items)
+    manual       → pct definido pelo usuário por item
+
+  expense_for_item_total      = expense.amount × base_de_rateio
+  expense_for_this_receipt    = expense_for_item_total × (qty_this_receipt / qty_expected_total)
+
+unit_cost efetivo = item.unit_cost + sum(expense_for_this_receipt) / qty_this_receipt
+```
+
+- Custo médio coerente desde o primeiro receipt.
+- Nenhum re-cálculo retroativo.
+- Se a PO nunca atingir 100% (supplier entregou menos e PO foi fechada com quantidade parcial), o delta de despesas fica no limbo — aceitável no MVP. Ajustes de custo no fechamento ficam para pós-MVP.
+
+**Status**: `decided`
+
+### D5. `due_date` do Bill gerado na confirmação da PO
+
+**Onde**: o texto antigo dizia que o Bill "vence na data acordada" mas não existia tal campo no PO; `expected_date` é de entrega, não vencimento.
+
+**Decisão**: **PO usa o mesmo `payment_term` do sales_order**. Simetria total.
+
+- `purchase_order.payment_term_id`: FK → `payment_term` (definido em [Financial](../09-financial/README.md)), obrigatório.
+- Na confirmação da PO, o sistema gera N Bills (1 por `payment_term_installment`):
+  - `due_date` = `purchase_order.confirmed_at + days_offset`
+  - `amount` = `purchase_order.total × pct / 100` (última parcela absorve arredondamento)
+  - `installment_number` = `sequence`
+  - `installment_total` = total de parcelas
+- "À vista" = template com 1 parcela, `days_offset = 0`, `pct = 100`.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **B6** — Numeração de `purchase_order` via `document_sequence`. Decisão completa em [Foundation → B6](../01-foundation/README.md#b6-numeração-de-sales_order-purchase_order-invoice).

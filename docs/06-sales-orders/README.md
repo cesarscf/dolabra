@@ -97,13 +97,13 @@ Um pedido passa para `invoiced` assim que a primeira invoice parcial é emitida.
 |---|---|---|
 | `id` | uuid | |
 | `organization_id` | uuid | Chave de tenancy |
-| `number` | string | Número legível do pedido (ex.: `SO-000001`). Gerado via `document_sequence` — ver `01-foundation.md` |
+| `number` | string | Número legível do pedido (ex.: `SO-000001`). Gerado via `document_sequence` — ver [Foundation](../01-foundation/README.md) |
 | `status` | enum | Ver fluxo de status acima |
 | `customer_id` | uuid | FK → `contact` (type precisa incluir `customer`) |
 | `seller_id` | uuid | FK → `seller`. Nullable |
 | `price_list_id` | uuid | FK → `price_list`. Tabela de preço usada neste pedido |
 | `shipping_address_id` | uuid | FK → `contact_address`. Nullable |
-| `payment_term_id` | uuid | FK → `payment_term` (ver `09-financial.md`). Pré-preenchido pelo `default_payment_term_id` do contact, editável |
+| `payment_term_id` | uuid | FK → `payment_term` (ver [Financial](../09-financial/README.md)). Pré-preenchido pelo `default_payment_term_id` do contact, editável |
 | `subtotal` | decimal | Soma dos totais dos itens antes do desconto do pedido |
 | `discount_total` | decimal | Valor do desconto aplicado no pedido |
 | `total` | decimal | `subtotal - discount_total` |
@@ -138,7 +138,7 @@ Um sales order pode gerar várias invoices. Isso atende cenários em que os iten
 Quando uma invoice é emitida a partir de um sales order:
 
 1. **Estoque baixado** — um stock movement de `out` é gerado por SKU.
-2. **CAR gerado** — uma entrada de CAR por parcela, percorrendo os `payment_term_installment` do `payment_term_id` do pedido (ver `09-financial.md`).
+2. **CAR gerado** — uma entrada de CAR por parcela, percorrendo os `payment_term_installment` do `payment_term_id` do pedido (ver [Financial](../09-financial/README.md)).
 3. **Snapshot fiscal** — NCM, CEST, CFOP e CSTs são copiados do `tax_group` para cada `invoice_item` nesse momento. Edições futuras no produto não afetam este registro.
 4. **Campo NF** — `nf_number` é um campo de texto livre para o usuário registrar o número da nota emitida externamente (MVP). Emissão nativa de NF-e é pós-MVP.
 
@@ -148,3 +148,43 @@ Quando uma invoice é emitida a partir de um sales order:
 - Pedidos em `approved` ou `picking` podem ser cancelados com confirmação.
 - Pedidos em `invoiced` ou `delivered` não podem ser cancelados — é necessário um processo de devolução/crédito (pós-MVP).
 - Pedidos `cancelled` são imutáveis e não geram movimentos de estoque ou financeiros.
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`B3`, `C3`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### B3. Credit limit do contact: bloqueia, alerta ou exige aprovação?
+
+**Onde**: o módulo Contacts define `credit_limit` mas não dizia o que acontecia ao ultrapassá-lo.
+
+**Decisão**: **força `awaiting_approval`** quando o limite é excedido.
+
+Regra:
+
+```
+saldo_em_aberto = SUM(car.amount - car.paid_amount)
+                  WHERE customer_id = X
+                    AND status IN (pending, partial)
+
+excede = (saldo_em_aberto + sales_order.total) > contact.credit_limit
+
+SE contact.credit_limit IS NOT NULL AND excede:
+  status do pedido é forçado para 'awaiting_approval'
+  (mesmo em orgs que desabilitam essa etapa por default)
+```
+
+- Org que não quer a verificação: deixar `contact.credit_limit = null`.
+- Setting para trocar o comportamento (`block` / `warn_only`) fica como extensão futura.
+
+**Status**: `decided`
+
+### C3. Reserva de estoque em sales_order aprovado
+
+**Onde**: o módulo mencionava "reserva de estoque pode ser aplicada (futuro)". Sem reserva, aprovar pedido não garante estoque no picking — risco operacional declarado.
+
+**Status**: `deferred` — pós-MVP.
+
+### Referências cruzadas
+
+- **A5** — `payment_terms` estruturado via templates (afeta `sales_order.payment_term_id`). Decisão completa em [Financial → A5](../09-financial/README.md#a5-payment_terms-como-string-livre-vs-estrutura).
+- **B6** — Numeração de `sales_order` via `document_sequence`. Decisão completa em [Foundation → B6](../01-foundation/README.md#b6-numeração-de-sales_order-purchase_order-invoice).

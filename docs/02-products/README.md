@@ -195,7 +195,7 @@ Atributos são definidos uma vez por organization e reutilizados entre produtos.
 
 ## Categorias
 
-Árvore hierárquica de profundidade ilimitada (auto-referenciada). Servem apenas para navegação/organização e para regras de comissão por categoria (ver `05-sellers.md`). Não carregam dados fiscais — toda regra fiscal vive em `tax_group`.
+Árvore hierárquica de profundidade ilimitada (auto-referenciada). Servem apenas para navegação/organização e para regras de comissão por categoria (ver [Sellers](../05-sellers/README.md)). Não carregam dados fiscais — toda regra fiscal vive em `tax_group`.
 
 | Campo | Tipo | Observações |
 |---|---|---|
@@ -267,4 +267,78 @@ Um `tax_group` agrupa as regras fiscais de um produto. No momento do faturamento
 
 O `tax_group` é atribuído no nível de **product**, não no nível de SKU.
 
-Os campos incluem: `ncm`, `cest`, `cfop`, `icms_cst`, `pis_cst`, `cofins_cst`, `ipi_cst`, `origin` e as alíquotas aplicáveis. A definição completa está no doc do módulo Fiscal.
+Os campos incluem: `ncm`, `cest`, `cfop`, `icms_cst`, `pis_cst`, `cofins_cst`, `ipi_cst`, `origin` e as alíquotas aplicáveis. A definição completa está em [Tax Groups](../10-tax-groups/README.md).
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A2`, `A3`, `D2`, `D3`, `C1`) são estáveis e podem ser referenciados de outras features.
+
+### A2. Dados fiscais duplicados em product × tax_group × category
+
+**Onde**: `product` tinha `ncm`, `cest`, `cfop_default`, `origin`, `taxable_unit`; `tax_group` tinha os mesmos campos; `category` tinha `ncm_default`, `cfop_default`, `taxable_unit_default`. Três lugares podiam definir o mesmo NCM e a regra de herança só cobria `category × product`.
+
+**Decisão**: **`tax_group` é a única fonte da verdade fiscal**.
+
+- Removidos de `product`: `ncm`, `cest`, `cfop_default`, `origin`, `taxable_unit`.
+- Removidos de `category`: `ncm_default`, `cfop_default`, `taxable_unit_default`. `category` passa a servir apenas para navegação e comissão.
+- `product` aponta para regras fiscais apenas via `tax_group_id`.
+- Produtos com fiscal atípico recebem um `tax_group` específico — barato e explícito.
+- Snapshot na invoice continua protegendo o histórico.
+
+**Status**: `decided`
+
+### A3. Kit `price_mode`: onde mora
+
+**Onde**: a documentação descrevia `price_mode: sum | fixed | discount` para kits sem definir onde armazenar `price_mode`, `fixed_price` e `discount_pct`.
+
+**Decisão**: **preço fixo vive em `price_list_item`** (aproveita múltiplas price_lists); modos `sum` e `discount` são calculados em runtime.
+
+- Todo product tem ≥1 SKU, inclusive kits — o SKU do kit é o identificador de venda e a chave em `price_list_item`.
+- Campos novos em `product` (aplicáveis só quando `type = kit`):
+  - `kit_price_mode`: enum `sum | fixed | discount`
+  - `kit_discount_pct`: decimal, nullable, usado só quando `kit_price_mode = discount`
+- Cálculo de preço do kit no momento da venda:
+  - `sum` — soma dos `price_list_item.price` dos componentes (multiplicados pela quantidade do kit_item) na price_list ativa
+  - `fixed` — lê `price_list_item.price` do SKU do kit na price_list ativa
+  - `discount` — soma dos componentes × `(1 - kit_discount_pct/100)`
+- Kit no modo `fixed` pode ter preços diferentes por price_list (atacado, varejo, etc.) — igual a qualquer SKU.
+
+**Status**: `decided`
+
+### D2. Campos do SKU para kit
+
+**Onde**: A3 decidiu que todo product tem ≥1 SKU, inclusive kits. Mas campos de SKU (`cost_price`, `weight`, dims, `supplier_ref`) foram desenhados para produtos físicos.
+
+**Decisão**: **sem constraint de DB**. Todos os campos do SKU continuam nullable.
+
+- Para kits, `cost_price` e `weight` são **calculados em runtime** a partir dos componentes — a coluna no SKU do kit é ignorada.
+- `height/width/depth` ficam livres (a embalagem do kit pode ter dimensões próprias).
+- `supplier_ref` não se aplica a kit; a UI oculta o campo no formulário.
+- `ean_gtin` e `image_url` funcionam normalmente (kit pode ter GTIN e foto próprios).
+- Constraints em DB ficam fora: regras de negócio evoluem; UI e camada de serviço são as guardiãs.
+
+**Status**: `decided`
+
+### D3. `price_list_item` para kit conforme `kit_price_mode`
+
+**Onde**: A3 deixou implícito o papel de `price_list_item` por modo, mas não tratou os casos de lixo/órfão quando o modo muda.
+
+**Decisão**: **validação na camada de serviço**.
+
+Regras ao editar `kit_price_mode`:
+
+- **Mudar para `fixed`**: exigir `price_list_item` do SKU do kit na `price_list` default no mesmo request. Sem isso, bloquear. Price_lists adicionais (atacado etc.) podem ser preenchidas depois.
+- **Mudar para `sum` ou `discount`**: deletar (ou ignorar) os `price_list_item` existentes para o SKU do kit — viram lixo.
+- **Mudar entre `sum` e `discount`**: só o valor de `kit_discount_pct` precisa ser ajustado.
+
+Regras na emissão/venda:
+
+- Se `kit_price_mode = fixed` e não houver `price_list_item` na `price_list` do pedido, erro explícito ("preço do kit X não cadastrado na tabela Y"), sem fallback silencioso.
+
+**Status**: `decided`
+
+### C1. Unicidade de `product.name` por org
+
+**Decisão**: **sem unique constraint em `name`**. `slug` é o identificador; nome é legível. Dois produtos com o mesmo nome são permitidos.
+
+**Status**: `decided`

@@ -81,8 +81,8 @@ Um cadastro unificado para customers e suppliers. Um único registro de contact 
 | `mobile` | string | Nullable |
 | `default_seller_id` | uuid | FK → `seller`. Vendedor default atribuído a este customer. Nullable |
 | `default_price_list_id` | uuid | FK → `price_list`. Tabela de preço default para este customer. Nullable |
-| `credit_limit` | decimal | Saldo em aberto máximo permitido. Nullable (sem limite). Quando excedido, o sales_order é forçado a `awaiting_approval` — ver `06-sales-orders.md` |
-| `default_payment_term_id` | uuid | FK → `payment_term` (ver `09-financial.md`). Condição de pagamento default pré-preenchida em novos sales_orders. Nullable |
+| `credit_limit` | decimal | Saldo em aberto máximo permitido. Nullable (sem limite). Quando excedido, o sales_order é forçado a `awaiting_approval` — ver [Sales Orders](../06-sales-orders/README.md) |
+| `default_payment_term_id` | uuid | FK → `payment_term` (ver [Financial](../09-financial/README.md)). Condição de pagamento default pré-preenchida em novos sales_orders. Nullable |
 | `status` | enum | `active \| inactive \| blocked` |
 | `notes` | text | Observações internas. Nullable |
 | `created_at` | timestamp | |
@@ -100,7 +100,7 @@ Um cadastro unificado para customers e suppliers. Um único registro de contact 
 
 ## Endereços
 
-Um contact pode ter vários endereços. Cada endereço tem um type indicando sua finalidade. A tabela `contact_address` é uma **ponte** entre `contact` e a tabela compartilhada `address` (ver `01-foundation.md`). Os campos de endereço (street, number, city, …) vivem apenas em `address` e são reutilizáveis por qualquer entidade.
+Um contact pode ter vários endereços. Cada endereço tem um type indicando sua finalidade. A tabela `contact_address` é uma **ponte** entre `contact` e a tabela compartilhada `address` (ver [Foundation](../01-foundation/README.md)). Os campos de endereço (street, number, city, …) vivem apenas em `address` e são reutilizáveis por qualquer entidade.
 
 | Campo | Tipo | Observações |
 |---|---|---|
@@ -113,3 +113,33 @@ Um contact pode ter vários endereços. Cada endereço tem um type indicando sua
 ## Notas sobre dados fiscais
 
 Quando uma sales invoice (NF-e) é emitida, os dados fiscais do customer no momento do faturamento são snapshotados na invoice — `cnpj`/`cpf`, `legal_name`, `state_registration` e endereço. Alterações no contact após a emissão não afetam documentos históricos.
+
+## Decisões arquiteturais
+
+Esta seção registra **o porquê** por trás das escolhas que travam o schema/comportamento deste módulo. Cada item preserva opções consideradas e tradeoffs — não apenas a decisão final. Os IDs (`A1`, `C4`) são estáveis e podem ser referenciados de outras features. Decisões cujo impacto principal mora em outro módulo aparecem em **Referências cruzadas** com link para a feature dona.
+
+### A1. Address: tabela compartilhada vs. por entidade
+
+**Onde**: dois modelos coexistiam — Foundation definia `address` compartilhada (referenciada via `address_id`), e Contacts definia `contact_address` com campos inline e FK em `contact_id`. Um contact pode ter vários endereços (main/billing/shipping, `is_default`); uma organization tem um só. Não estava claro se address era compartilhado ou por entidade.
+
+**Decisão**: **única tabela `address` compartilhada**.
+
+- `organization.address_id` continua apontando para `address`.
+- `contact_address` vira tabela-ponte: `id`, `contact_id` FK, `address_id` FK, `type (main|billing|shipping)`, `is_default`. Sem campos de endereço inline.
+- Campos de endereço (`street`, `number`, …) vivem só em `address`.
+- Entidades futuras (filiais, shipping avulso, etc.) reutilizam `address` diretamente.
+
+**Status**: `decided`
+
+### C4. Transições de status do contact sem efeito cascata
+
+**Onde**: bloquear um contact não cancela CARs em aberto. Comportamento esperado, mas precisava ficar explícito.
+
+**Decisão**: **sem cascata**. Status do contact afeta apenas a criação de novos pedidos/documentos. CARs, Bills, sales_orders e purchase_orders existentes seguem o fluxo normal. Um CAR é um direito real da empresa — não desaparece porque o cliente foi bloqueado.
+
+**Status**: `decided`
+
+### Referências cruzadas
+
+- **A5** — `payment_terms` como string livre vs. estrutura (afeta `contact.default_payment_term_id`). Decisão completa em [Financial → A5](../09-financial/README.md#a5-payment_terms-como-string-livre-vs-estrutura).
+- **B3** — Credit limit: bloqueia, alerta ou exige aprovação? (define o significado de `contact.credit_limit`). Decisão completa em [Sales Orders → B3](../06-sales-orders/README.md#b3-credit-limit-do-contact-bloqueia-alerta-ou-exige-aprovação).
